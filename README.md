@@ -2,6 +2,7 @@
 
 ## Pour tous les pushs, à la fin du titre, [INITIALES PILOTE - INITIALES COPILOTES]
 
+## Exemple de steering behaviour : https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-seek--gamedev-849
 
 ##  Requis ###
     - Frame principal
