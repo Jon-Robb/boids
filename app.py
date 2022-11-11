@@ -2,13 +2,13 @@ from tkinter import ttk, Tk
 from abc import abstractmethod
 import math
 from PIL import Image, ImageTk, ImageDraw
-from vect2d import Vect2D
+#from vect2d import Vect2D
 
 
 ## Vue ##
 
 class GUI(Tk):
-    def __init__(self, control_panel, param_panel, view_window, size:tuple):
+    def __init__(self, control_panel, param_panel, view_window, size=(100,200)):
         self.__control_panel = control_panel
         self.__param_panel = param_panel
         self.__view_window = view_window
