@@ -49,10 +49,12 @@ class Drawable():
     def position(self):
         return self.__position
 
+
 class App():
     def __init__(self):
         self.__gui = GUI(self, Vect2D(500,500), RGBAColor(255 ,255, 255), Vect2D(0,0))
         self.__simulation = Simulation()
+    
     
 class GUI(Tk, Drawable):
     def __init__(self, app:App, size:Vect2D, color, position=None):
@@ -76,19 +78,36 @@ class GUI(Tk, Drawable):
     @property
     def height(self):
         return self.__height
+    
+    
         
 class Entity():
     def __init__(self):
         pass
+    
+class Updatable():
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def tick(self):
+        pass
+
  
-class Simulation():
+class Simulation(Updatable):
     def __init__(self, sprites:list[Entity]):
         self.__sprites = sprites
+
+    def tick(self):
+        for sprite in self.__sprites:
+            sprite.tick()
+        
 
 
 class ControlPanel(ttk.LabelFrame):
     def __init__(self, title):
         self.text = title
+
 
 class StartStopPanel(ControlPanel):
     def __init__(self):
@@ -96,17 +115,22 @@ class StartStopPanel(ControlPanel):
         self.__stop_btn = None
         self.__restart_btn = None
 
+
 class ViewWindow(Drawable):
     def __init__(self, size, color, position=None):
         Drawable.__init__(self, size, color, position)
+
+
 
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         self.text = title
 
+
 class VisualParamPanel(ParamPanel):
     def __init__(self):
         pass
+
 
 class SimParamPanel(ParamPanel):
     def __init__(self):
@@ -119,6 +143,7 @@ class SimParamPanel(ParamPanel):
     @property
     def sprites(self):
         return self.__sprites
+
 
 class Gravitational():
     def __init__(self, mass:int, force:int):
@@ -136,24 +161,75 @@ class Gravitational():
     @property
     def force(self):
         return self.__force
+ 
+    
+class Touchable():
+    def __init__(self):
+        pass
+    
+    @abstractmethod
+    def check_collision(self):
+        pass
+    
 
-class Circle(Entity):
+class Circle(Entity, Touchable):
     def __init__(self, position, color, radius):
         self.__position = position
         self.__color = color
         self.__radius = radius
 
+
 class StaticCircle(Circle):
     def __init__(self):
         pass
+ 
     
 class Movable():
     def __init__(self):
         pass
+ 
     
 class SteeringBehavior():
     def __init__(self):
-        pass
+        self.__force_attraction_repulsion = None
+        self.__resulting_direction = None
+        
+    @abstractmethod    
+    def behave(self, this_entity:Entity, target_entity:Entity):
+        return target_entity.position - this_entity.position
+  
+    
+class CollisionAvoidance(SteeringBehavior):
+    def __init__(self):
+        super().__init__(self)
+        
+    def behave(self, this_entity: Entity, target_entity: Entity):
+        return super().behave(this_entity, target_entity)
+ 
+    
+class Wander(SteeringBehavior):
+    def __init__(self):
+        super().__init__(self)
+        
+    def behave(self, this_entity: Entity, target_entity: Entity):
+        return super().behave(this_entity, target_entity)
+ 
+    
+class FleeArrival(SteeringBehavior):
+    def __init__(self):
+        super().__init__(self)
+        
+    def behave(self, this_entity: Entity, target_entity: Entity):
+        return super().behave(this_entity, target_entity)
+ 
+    
+class Seek(SteeringBehavior):
+    def __init__(self):
+        super().__init__(self)
+        
+    def behave(self, this_entity: Entity, target_entity: Entity):
+        return super().behave(this_entity, target_entity)
+    
 class Piloted(Movable):
     def __init__(self, slowing_distance:int, steering_force:Vect2D, desired_speed:Vect2D, steering_behavior:list[SteeringBehavior], acceleration:Vect2D, max_steering_force:Vect2D):
         self.__slowing_distance = slowing_distance
@@ -172,13 +248,6 @@ class DynamicCircle(Circle, Piloted):
         self.__vitesse = vitesse
         self.__vitesse_max = vitesse_max
     
-class Updatable():
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def tick(self):
-        pass
 
 
 def main():
