@@ -51,18 +51,18 @@ class Drawable():
 
 class App():
     def __init__(self):
-        self.__gui = GUI()
-        self.__simulation = Simulation()        
+        self.__gui = GUI(self, Vect2D(500,500), RGBAColor(255 ,255, 255), Vect2D(0,0))
+        self.__simulation = Simulation()
     
 class GUI(Tk, Drawable):
-    def __init__(self, control_panel, param_panel, view_window, app:App, size:Vect2D, color, position=None):
-        Drawable.__init__(self, size, color)
+    def __init__(self, app:App, size:Vect2D, color, position=None):
+        Drawable.__init__(self, size, color, position)
         
-        self.__control_panel = control_panel
-        self.__param_panel = param_panel
-        self.__view_window = view_window
-        self.__width = size[0]
-        self.__height = size[1]
+        self.__control_panel = ControlPanel("Control")
+        self.__param_panel = ParamPanel("Param")
+        self.__view_window = ViewWindow(size, color)
+        self.__width = size.x
+        self.__height = size.y
         self.__app = app
         
         self.title('Boids')
@@ -86,9 +86,9 @@ class Simulation():
         self.__sprites = sprites
 
 
-class ControlPanel(ttk.Combobox):
-    def __init__(self):
-        pass
+class ControlPanel(ttk.LabelFrame):
+    def __init__(self, title):
+        self.text = title
 
 class StartStopPanel(ControlPanel):
     def __init__(self):
@@ -97,12 +97,12 @@ class StartStopPanel(ControlPanel):
         self.__restart_btn = None
 
 class ViewWindow(Drawable):
-    def __init__(self, size, color):
-        Drawable.__init__(self, size, color)
+    def __init__(self, size, color, position=None):
+        Drawable.__init__(self, size, color, position)
 
-class ParamPanel(ttk.Combobox):
-    def __init__(self):
-        pass
+class ParamPanel(ttk.LabelFrame):
+    def __init__(self, title):
+        self.text = title
 
 class VisualParamPanel(ParamPanel):
     def __init__(self):
