@@ -92,24 +92,18 @@ class Updatable():
 
 class App():
     def __init__(self):
-        self.__gui = GUI(Vect2D(500,500), RGBAColor(255 ,255, 255), Vect2D(0,0))
+        self.__gui = GUI(500,500)
         #self.__simulation = Simulation()
     
     
-class GUI(Tk, Drawable):
+class GUI(Tk):
     
-    def __init__(self, size:Vect2D, color, position=None):
+    def __init__(self, width, height):
         Tk.__init__(self)
-        Drawable.__init__(self, size, color, position)
-        self.__main_panel = MainFrame("Main Panel")
-       
-        
-        self.__view_window = ViewWindow(size, color)
-        self.__width = size.x
-        self.__height = size.y
-        
-         
+        self.__main_frame = MainFrame(Vect2D(500,500), RGBAColor(0 ,0, 0), Vect2D(0,0)) 
         self.title('Boids')
+        self.__width = width
+        self.__height = height
         self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
         self.iconbitmap('boids.ico')
         
@@ -147,16 +141,35 @@ class Simulation(Updatable):
             sprite.tick()
 
 
-class MainFrame(ttk.Frame):
+class MainFrame(ttk.Frame, Drawable):
+    def __init__(self, size:Vect2D, color, position=None):
+        ttk.Frame.__init__(self, root=None, text=None)
+        Drawable.__init__(self, size, color, position)
+        self.__main_panel = ControlBar("Main Panel")
+        self.__view_window = ViewWindow(size, color)   
+        self.__main_panel.grid(row=0, column=0, sticky='nsew')
+        self.__view_window.grid(row=0, column=1, sticky="nsew") 
+        
+        
+
+
+class ControlBar(ttk.Frame):
     def __init__(self, title):
         ttk.Frame.__init__(self, title=None)
         self.__control_panel = StartStopPanel("Control")
         self.__param_panel = ParamPanel("Paramètre")
         self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
-        self.__control_panel.pack()
-        self.__param_panel.pack()
-        self.__visual_param_panel.pack()
-        self.pack(side="left")
+        self.__control_panel.grid(row=0, column=0)
+        self.__param_panel.grid(row=1, column=0)
+        self.__visual_param_panel.grid(row=2, column=0)
+        self.__control_panel.rowconfigure(0, minsize=200, weight=1)
+        self.__control_panel.columnconfigure(0, minsize=200, weight=1)
+        self.__param_panel.rowconfigure(1, minsize=200, weight=1)
+        self.__param_panel.columnconfigure(1, minsize=200, weight=1)
+        self.__visual_param_panel.rowconfigure(2, minsize=200, weight=1)
+        self.__visual_param_panel.columnconfigure(2, minsize=200, weight=1)
+        self.grid(row=0, column=0, sticky='ns')
+        
 
 
 class StartStopPanel(ttk.LabelFrame):
@@ -170,9 +183,17 @@ class StartStopPanel(ttk.LabelFrame):
         self.__next_button.pack()
 
 
-class ViewWindow(Drawable):
+class ViewWindow(ttk.Label, Drawable):
     def __init__(self, size, color, position=None):
+        ttk.Label.__init__(self, root=None, text=None)
         Drawable.__init__(self, size, color, position)
+        self.__image = Image.new('RGBA', (int(400), int(100)), (0, 0, 0))
+        self.__image_draw = ImageDraw.Draw(self.__image)
+        self.__image_tk = ImageTk.PhotoImage(self.__image)
+        self.__image_label = ttk.Label(self, image=self.__image_tk)
+        self.__image_label.grid(row=0, column=0, sticky='ns')
+        self.__image_label.columnconfigure(0, minsize=600, weight=1)
+
 
 
 class ParamPanel(ttk.LabelFrame):
