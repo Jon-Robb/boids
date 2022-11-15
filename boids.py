@@ -85,15 +85,14 @@ class GUI(Tk, Drawable):
     def __init__(self, size:Vect2D, color, position=None):
         Tk.__init__(self)
         Drawable.__init__(self, size, color, position)
+        self.__main_panel = MainFrame("Main Panel")
+       
         
-        self.__control_panel = ControlPanel("Control")
-        self.__param_panel = ParamPanel("Param")
         self.__view_window = ViewWindow(size, color)
         self.__width = size.x
         self.__height = size.y
         
-        self.__control_panel.pack(side="left", fill="y")
-          
+         
         self.title('Boids')
         self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
         self.iconbitmap('boids.ico')
@@ -121,27 +120,29 @@ class Simulation(Updatable):
     def tick(self):
         for sprite in self.__sprites:
             sprite.tick()
-        
 
 
-class ControlPanel(ttk.LabelFrame):
+class MainFrame(ttk.Frame):
     def __init__(self, title):
-        ttk.LabelFrame.__init__(self, text=title)
+        ttk.Frame.__init__(self, title=None)
+        self.__control_panel = StartStopPanel("Control")
+        self.__param_panel = ParamPanel("Paramètre")
+        self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
+        self.__control_panel.pack()
+        self.__param_panel.pack()
+        self.__visual_param_panel.pack()
+        self.pack(side="left")
+
+
+class StartStopPanel(ttk.LabelFrame):
+    def __init__(self, text): 
+        ttk.LabelFrame.__init__(self, root=None, text=text)
         self.__start_button = ttk.Button(self, text="Start")
         self.__stop_button = ttk.Button(self, text="Stop")
-        self.next_button = ttk.Button(self, text="Next Step")
-
-        
+        self.__next_button = ttk.Button(self, text="Next Step")
         self.__start_button.pack()
         self.__stop_button.pack()
-        self.next_button.pack()
-
-
-class StartStopPanel(ControlPanel):
-    def __init__(self):
-        self.__start_btn = None
-        self.__stop_btn = None
-        self.__restart_btn = None
+        self.__next_button.pack()
 
 
 class ViewWindow(Drawable):
@@ -151,11 +152,17 @@ class ViewWindow(Drawable):
 
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
-        self.text = title
+        ttk.LabelFrame.__init__(self, root=None, text=title)
+        self__test_btn = ttk.Button(self, text="Test")
+        self__test_btn.pack()
+        
 
-class VisualParamPanel(ParamPanel):
-    def __init__(self):
-        pass
+
+class VisualParamPanel(ttk.LabelFrame):
+     def __init__(self, title):
+        ttk.LabelFrame.__init__(self, root=None, text=title)
+        self__test_btn = ttk.Button(self, text="Test")
+        self__test_btn.pack()
 
 class SimParamPanel(ParamPanel):
     def __init__(self):
