@@ -67,6 +67,8 @@ class GUI(Tk, Drawable):
         self.__view_window = ViewWindow(size, color)
         self.__width = size.x
         self.__height = size.y
+        
+        self.__control_panel.pack(side="left", fill="y")
           
         self.title('Boids')
         self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
@@ -82,9 +84,8 @@ class GUI(Tk, Drawable):
     @property
     def height(self):
         return self.__height
-    
-    
-        
+
+     
 class Entity():
     def __init__(self):
         pass
@@ -110,7 +111,9 @@ class Simulation(Updatable):
 
 class ControlPanel(ttk.LabelFrame):
     def __init__(self, title):
-        self.text = title
+        ttk.LabelFrame.__init__(self, text=title)
+        self.__start_button = ttk.Button(self, text="Start")
+        self.__start_button.pack()
 
 
 class StartStopPanel(ControlPanel):
