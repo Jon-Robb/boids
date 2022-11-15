@@ -1,9 +1,8 @@
 import math
+import random
 from abc import abstractmethod
 from tkinter import Tk, ttk
-
 from PIL import Image, ImageDraw, ImageTk
-
 from vect2d import Vect2D
 
 
@@ -36,7 +35,8 @@ class Drawable():
         self.__size = size
         self.__color = color
         self.__position = position
-        
+
+
     @property
     def size(self):
         return self.__size
@@ -49,6 +49,30 @@ class Drawable():
     def position(self):
         return self.__position
 
+
+class Movable():
+    def __init__(self, speed, max_speed):
+        self.__speed = speed
+        self.
+
+    @abstractmethod
+    def move(self):
+        pass
+class Touchable():
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def checkCollision(self):
+        pass
+
+class Updatable():
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def tick(self):
+        pass
 
 class App():
     def __init__(self):
@@ -89,16 +113,7 @@ class GUI(Tk, Drawable):
 class Entity():
     def __init__(self):
         pass
-    
-class Updatable():
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def tick(self):
-        pass
-
- 
+     
 class Simulation(Updatable):
     def __init__(self, sprites:list[Entity]):
         self.__sprites = sprites
@@ -134,16 +149,13 @@ class ViewWindow(Drawable):
         Drawable.__init__(self, size, color, position)
 
 
-
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         self.text = title
 
-
 class VisualParamPanel(ParamPanel):
     def __init__(self):
         pass
-
 
 class SimParamPanel(ParamPanel):
     def __init__(self):
@@ -156,114 +168,39 @@ class SimParamPanel(ParamPanel):
     @property
     def sprites(self):
         return self.__sprites
+    
 
-
-class Gravitational():
-    def __init__(self, mass:int, force:int):
-        self.__mass = mass
-        self.__force = force
-       
-    @abstractmethod
-    def pull(self):
-        pass
-    
-    @property
-    def mass(self):
-        return self.__mass
-    
-    @property
-    def force(self):
-        return self.__force
- 
-    
-class Touchable():
-    def __init__(self):
-        pass
     
     @abstractmethod
     def check_collision(self):
         pass
     
+class Circle(Entity, Movable, Touchable):
+    def __init__(self, border_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), fill_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), max_speed:int=1, position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), radius:int=random.randrange(5,10), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10))):
+        Entity.__init__(self, fill_color=fill_color, border_color=border_color, position=position, size=(radius*2, radius*2))
+        Movable.__init__(self, max_speed=max_speed, speed=speed)
 
-class Circle(Entity, Touchable, Updatable):
-    def __init__(self, radius=random.randrange(5,10), fill_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), border_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), density=random.randrange(0,10), position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10)), acceleration:Vect2D=Vect2D(0,0), bounce=0.95, friction=0.95):
-        self.__position = position
-        self.__color = color
-        self.__radius = radius
 
-class Ball(Updatable, Gravitational):
-        Gravitational.__init__(self, masse=(density * (math.pi * radius ** 2)))
-        self.__radius = radius
-        self.__fill_color = fill_color
-        self.__border_color = border_color
-        self.__density = density
-        self.__position = position
-        self.__initial_speed = deepcopy(speed)
-        self.__speed = deepcopy(speed)
-        self.__acceleration = acceleration
-        self.__bounce = bounce
-        self.__friction = friction
-        self.__trail = Trail();
+    def check_collision(self):
+        return super().check_collision()
 
     def move(self, time):
+
         self.__position.x += self.__speed.x + 0.5 * self.__acceleration.x * time **2
         self.__position.y += self.__speed.y + 0.5 * self.__acceleration.y * time **2
         self.__speed.x += self.__acceleration.x * time
         self.__speed.y += self.__acceleration.y * time
         
 
-    def bounce(self, game_dimension:Vect2D):
-        if self.__position.x <= 0 + self.__radius:
-            border = 0
-            self.__speed.x = -self.__speed.x * self.__bounce
-            self.__speed.y *= self.__friction
-            self.__position.x = 2.0 * (border + self.__radius) - self.__position.x
-
-        elif self.__position.x >= game_dimension.x - self.__radius :
-            border = game_dimension.x
-            self.__speed.x = -self.__speed.x * self.__bounce
-            self.__speed.y *= self.__friction
-            self.__position.x = 2.0 * (border - self.__radius) - self.__position.x
-
-        if self.__position.y <= 0 + self.__radius :
-            border = 0
-            self.__speed.y = -self.__speed.y * self.__bounce
-            self.__speed.x *= self.__friction
-            self.__position.y = 2.0 * (border + self.__radius) - self.__position.y
-
-        elif self.__position.y >= game_dimension.y - self.__radius :
-            border = game_dimension.y
-            self.__speed.y = -self.__speed.y * self.__bounce
-            self.__speed.x *= self.__friction
-            self.__position.y = 2.0 * (border - self.__radius) - self.__position.y
-
-    def tick(self, time, game_dimensions, acceleration, game):
+    def tick(self, time):
         
-        self.__acceleration = acceleration
-        
-        if not game.hand_of_god == Vect2D(-1, -1):
-            self.pushed_by(game.hand_of_god)
-            
-        if game.gravity_field_active:
-                self.pulled_by(game.balls)
-                
-        # if acceleration == Vect2D(0, 0):
-        #     self.reset_speed()
-        #     pass
-
         self.move(time)
-        self.bounce(game_dimensions)
 
 class StaticCircle(Circle):
     def __init__(self):
-        pass
- 
-    
-class Movable():
-    def __init__(self):
-        pass
- 
-    
+        Circle.init(self)
+
+
 class SteeringBehavior():
     def __init__(self):
         self.__force_attraction_repulsion = None
