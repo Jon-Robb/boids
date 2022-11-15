@@ -179,12 +179,74 @@ class Touchable():
         pass
     
 
-class Circle(Entity, Touchable):
-    def __init__(self, position, color, radius):
+class Circle(Entity, Touchable, Updatable):
+    def __init__(self, radius=random.randrange(5,10), fill_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), border_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), density=random.randrange(0,10), position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10)), acceleration:Vect2D=Vect2D(0,0), bounce=0.95, friction=0.95):
         self.__position = position
         self.__color = color
         self.__radius = radius
 
+class Ball(Updatable, Gravitational):
+        Gravitational.__init__(self, masse=(density * (math.pi * radius ** 2)))
+        self.__radius = radius
+        self.__fill_color = fill_color
+        self.__border_color = border_color
+        self.__density = density
+        self.__position = position
+        self.__initial_speed = deepcopy(speed)
+        self.__speed = deepcopy(speed)
+        self.__acceleration = acceleration
+        self.__bounce = bounce
+        self.__friction = friction
+        self.__trail = Trail();
+
+    def move(self, time):
+        self.__position.x += self.__speed.x + 0.5 * self.__acceleration.x * time **2
+        self.__position.y += self.__speed.y + 0.5 * self.__acceleration.y * time **2
+        self.__speed.x += self.__acceleration.x * time
+        self.__speed.y += self.__acceleration.y * time
+        
+
+    def bounce(self, game_dimension:Vect2D):
+        if self.__position.x <= 0 + self.__radius:
+            border = 0
+            self.__speed.x = -self.__speed.x * self.__bounce
+            self.__speed.y *= self.__friction
+            self.__position.x = 2.0 * (border + self.__radius) - self.__position.x
+
+        elif self.__position.x >= game_dimension.x - self.__radius :
+            border = game_dimension.x
+            self.__speed.x = -self.__speed.x * self.__bounce
+            self.__speed.y *= self.__friction
+            self.__position.x = 2.0 * (border - self.__radius) - self.__position.x
+
+        if self.__position.y <= 0 + self.__radius :
+            border = 0
+            self.__speed.y = -self.__speed.y * self.__bounce
+            self.__speed.x *= self.__friction
+            self.__position.y = 2.0 * (border + self.__radius) - self.__position.y
+
+        elif self.__position.y >= game_dimension.y - self.__radius :
+            border = game_dimension.y
+            self.__speed.y = -self.__speed.y * self.__bounce
+            self.__speed.x *= self.__friction
+            self.__position.y = 2.0 * (border - self.__radius) - self.__position.y
+
+    def tick(self, time, game_dimensions, acceleration, game):
+        
+        self.__acceleration = acceleration
+        
+        if not game.hand_of_god == Vect2D(-1, -1):
+            self.pushed_by(game.hand_of_god)
+            
+        if game.gravity_field_active:
+                self.pulled_by(game.balls)
+                
+        # if acceleration == Vect2D(0, 0):
+        #     self.reset_speed()
+        #     pass
+
+        self.move(time)
+        self.bounce(game_dimensions)
 
 class StaticCircle(Circle):
     def __init__(self):
