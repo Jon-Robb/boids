@@ -113,7 +113,13 @@ class ControlPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, text=title)
         self.__start_button = ttk.Button(self, text="Start")
+        self.__stop_button = ttk.Button(self, text="Stop")
+        self.next_button = ttk.Button(self, text="Next Step")
+
+        
         self.__start_button.pack()
+        self.__stop_button.pack()
+        self.next_button.pack()
 
 
 class StartStopPanel(ControlPanel):
