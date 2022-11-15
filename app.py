@@ -70,6 +70,7 @@ class GUI(Tk, Drawable):
           
         self.title('Boids')
         self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
+        self.iconbitmap('boids.ico')
         
         self.mainloop()
                
