@@ -52,12 +52,14 @@ class Drawable():
 
 class App():
     def __init__(self):
-        self.__gui = GUI(self, Vect2D(500,500), RGBAColor(255 ,255, 255), Vect2D(0,0))
-        self.__simulation = Simulation()
+        self.__gui = GUI(Vect2D(500,500), RGBAColor(255 ,255, 255), Vect2D(0,0))
+        #self.__simulation = Simulation()
     
     
 class GUI(Tk, Drawable):
-    def __init__(self, app:App, size:Vect2D, color, position=None):
+    
+    def __init__(self, size:Vect2D, color, position=None):
+        Tk.__init__(self)
         Drawable.__init__(self, size, color, position)
         
         self.__control_panel = ControlPanel("Control")
@@ -65,10 +67,11 @@ class GUI(Tk, Drawable):
         self.__view_window = ViewWindow(size, color)
         self.__width = size.x
         self.__height = size.y
-        self.__app = app
-        
+          
         self.title('Boids')
-        self.geometry(f'{self.width}x{self.height}')
+        self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
+        
+        self.mainloop()
                
     # GUI getters #    
     @property
