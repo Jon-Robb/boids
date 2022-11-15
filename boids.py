@@ -7,11 +7,14 @@ from vect2d import Vect2D
 
 
 class RGBAColor():
-    def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255):
+    def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255, randomize:bool=False):
         self.__r = r
         self.__g = g
         self.__b = b
         self.__a = a
+
+        if randomize:
+            self.randomize_color()
         
         @property
         def r(self):
@@ -29,12 +32,23 @@ class RGBAColor():
         def a(self):
             return self.__a
 
+        
+    def randomize_color(self):
+        self.__r = random.randint(0, 255)
+        self.__g = random.randint(0, 255)
+        self.__b = random.randint(0, 255)
+        self.__g = random.randint(0, 255)
+
 
 class Drawable():
     def __init__(self, size:Vect2D, color:RGBAColor, position:Vect2D):
         self.__size = size
         self.__color = color
         self.__position = position
+
+    @abstractmethod
+    def draw(self):
+        pass
 
 
     @property
@@ -53,11 +67,13 @@ class Drawable():
 class Movable():
     def __init__(self, speed, max_speed):
         self.__speed = speed
-        self.
+        self.__max_speed = max_speed
 
-    @abstractmethod
-    def move(self):
-        pass
+
+    def move(self, time):
+        self.__position += self.__speed * time
+
+
 class Touchable():
     def __init__(self):
         pass
@@ -109,8 +125,17 @@ class GUI(Tk, Drawable):
         return self.__height
 
      
-class Entity():
+class Entity(Drawable, Updatable):
     def __init__(self):
+        Drawable.__init__(self, fill_color=None, border_color=None, position=None, size=None)
+        Updatable.__init__(self)
+
+    @abstractmethod
+    def draw(self):
+        pass
+
+    @abstractmethod
+    def tick(self):
         pass
      
 class Simulation(Updatable):
@@ -183,24 +208,23 @@ class SimParamPanel(ParamPanel):
         pass
     
 class Circle(Entity, Movable, Touchable):
-    def __init__(self, border_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), fill_color=(random.randint(0,255),random.randint(0,255), random.randint(0,255)), max_speed:int=1, position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), radius:int=random.randrange(5,10), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10))):
-        Entity.__init__(self, fill_color=fill_color, border_color=border_color, position=position, size=(radius*2, radius*2))
+    def __init__(self, border_color=RGBAColor(randomize=True), fill_color=RGBAColor(randomize=True), max_speed=1, position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), radius:int=random.randrange(5,10), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10))):
+        Entity.__init__(self, border_color=border_color, fill_color=fill_color, position=position, size=(radius*2, radius*2))
         Movable.__init__(self, max_speed=max_speed, speed=speed)
 
+        self.__radius = radius
 
     def check_collision(self):
-        return super().check_collision()
+        Touchable.check_collision() 
+
+    def draw(self):
+        return ([(self.__position.x - self.__radius, self.__position.y - self.__radius), self.__position.x + self.__radius, self.__position.y + self.__radius], self.__fill_color, self.__border_color)
 
     def move(self, time):
+        Movable.move(time)
 
-        self.__position.x += self.__speed.x + 0.5 * self.__acceleration.x * time **2
-        self.__position.y += self.__speed.y + 0.5 * self.__acceleration.y * time **2
-        self.__speed.x += self.__acceleration.x * time
-        self.__speed.y += self.__acceleration.y * time
-        
 
     def tick(self, time):
-        
         self.move(time)
 
 class StaticCircle(Circle):
