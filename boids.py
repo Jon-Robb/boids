@@ -72,6 +72,9 @@ class Drawable():
     def position(self):
         return self.__position
 
+    @position.setter
+    def position(self, position):
+        self.__position = position
 
 class Movable():
     def __init__(self, acceleration, max_speed, speed):
@@ -81,10 +84,7 @@ class Movable():
 
 
     def move(self, time):
-        if self.__speed > self.__max_speed:
-            self.__speed == self.__max_speed
-
-        self.__position += self.__speed * time + self.__acceleration * 0.5 ** 2
+        self.position += self.__speed * time + self.__acceleration * 0.5 ** 2
 
     @property
     def max_speed(self):
@@ -105,30 +105,39 @@ class Updatable():
     def tick(self):
         pass
 
-class App(Updatable):
-    def __init__(self):
-        
-        self.__gui = GUI()
-        self.__simulation = Simulation()
-
-    def tick(self):
-        self.__simulation.tick(time=0.1,  canvas=self.__gui.__main_frame.__view_window) 
-
-        self.after(10, self.tick)
-   
+# class App(Updatable):
+# def __init__(self):
     
-class GUI(Tk):
+#     self.__gui = GUI()
+
+
+
+class App(Tk, Updatable):
     
     def __init__(self):
         Tk.__init__(self)
         self.__size = Vect2D(Tk.winfo_screenwidth(self), Tk.winfo_screenheight(self))
 
-        self.__main_frame = MainFrame(size=Vect2D(self.__size.x * 0.5,self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
+        self.__gui = GUI(size=Vect2D(self.__size.x * 0.5,self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
         self.title('Boids')
         self.geometry(str(int(self.__size.x * 0.5)) + 'x' + str(int(self.__size.y * 0.8)))
         self.iconbitmap('boids.ico')
 
+        self.__simulation = Simulation()
+
+        # self.tick()
+
         self.mainloop()
+
+
+    def tick(self):
+        for sprite in self.__simulation.sprites:
+            print(sprite.position)
+
+        self.__simulation.tick(time=0.1, draw=self.__gui.view_window.image_draw) 
+
+        self.after(10, self.tick)
+
                
     # GUI getters #    
     @property
@@ -138,11 +147,6 @@ class GUI(Tk):
     @property
     def height(self):
         return self.__height
-
-    @property
-    def main_frame(self):
-        return self.__main_frame
-
      
 class Entity(Drawable, Updatable):
     def __init__(self, border_color, fill_color, position, size):
@@ -158,14 +162,23 @@ class Entity(Drawable, Updatable):
         pass
      
 class Simulation(Updatable):
-    def __init__(self, sprites:list[Entity]=None):
-        self.__sprites = sprites
+    def __init__(self, nb_sprites:int=2):
 
-    def tick(self):
-        for sprite in self.__sprites:
-            sprite.tick()
+        self.__sprites = []
 
-class MainFrame(ttk.Frame, Drawable):
+        for _ in range(nb_sprites):
+            self.__sprites.append(DynamicCircle())
+
+    def tick(self, time, draw):
+        if self.__sprites:
+            for sprite in self.__sprites:
+                sprite.tick(time, draw)
+
+    @property
+    def sprites(self):
+        return self.__sprites
+
+class GUI(ttk.Frame, Drawable):
     def __init__(self, border_color=None, fill_color=None, position=None, size:Vect2D=None):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  fill_color, position, size)
@@ -213,23 +226,22 @@ class ViewWindow(ttk.Label, Drawable):
         self.__ball = DynamicCircle()
         self.__ball.draw(self.__image_draw)
         self.__image_tk = ImageTk.PhotoImage(self.__image)
+        self.__ball = DynamicCircle()
+        self.__ball.draw(self.__image_draw)
         self.__image_label = ttk.Label(self, image=self.__image_tk)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
 
-    def tick(self):
-        i = Image.new(mode='RGB', size=(self.width, self.height), color=(0,0,0))
-        draw = ImageDraw.Draw(i)
 
-        for ball in self.g.balls:
-            draw.ellipse([(ball.position.x - ball.radius, ball.position.y - ball.radius), (ball.position.x + ball.radius, ball.position.y + ball.radius)], ball.fill_color, ball.border_color)
-            ball.trail.tick(ball)
-            for point in ball.trail.points:
-                draw.point((point.x, point.y), ball.fill_color)
-       
-        self.tki = ImageTk.PhotoImage(i)
-        self.w["image"] = self.tki
-        
+
+
+    @property
+    def image(self):
+        return self.__image
+
+    @property
+    def image_draw(self):
+        return self.__image_draw        
 
 
 class ParamPanel(ttk.LabelFrame):
@@ -274,8 +286,8 @@ class Circle(Entity, Touchable):
     def check_collision(self):
         Touchable.check_collision() 
 
-    def draw(self, image_draw):
-        image_draw.ellipse(
+    def draw(self, draw):
+        draw.ellipse(
         [self.position.x,
         self.position.y,
         self.position.x + self.__radius,
@@ -283,9 +295,9 @@ class Circle(Entity, Touchable):
         fill=self.__fill_color.rgba,
         outline=self.__border_color.rgba)
 
-    def tick(self, time, canvas):
+    def tick(self, time, draw):
         self.move(time)
-        self.draw(canvas)
+        self.draw(draw)
 
 class StaticCircle(Circle):
     def __init__(self):
@@ -367,7 +379,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Piloted.__init__(self, slowing_distance, steering_force, steering_behaviors)
 
     def move(self, time):
-        Movable.move(time)
+        Movable.move(self, time)
     
 
 
