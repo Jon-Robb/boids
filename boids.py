@@ -52,7 +52,6 @@ class Drawable():
     def draw(self):
         pass
 
-
     @property
     def size(self):
         return self.__size
@@ -98,11 +97,13 @@ class Updatable():
     def tick(self):
         pass
 
-class App():
+class App(Updatable):
     def __init__(self):
         self.__gui = GUI(500,500)
-        #self.__simulation = Simulation()
-    
+        self.__simulation = Simulation()
+
+    def tick(self):
+        self.__simulation.tick(time=None,  canvas=self.__gui.__main_frame.__view_window)    
     
 class GUI(Tk):
     
@@ -114,7 +115,7 @@ class GUI(Tk):
         self.__height = height
         self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
         self.iconbitmap('boids.ico')
-        
+
         self.mainloop()
                
     # GUI getters #    
@@ -125,6 +126,10 @@ class GUI(Tk):
     @property
     def height(self):
         return self.__height
+
+    @property
+    def main_frame(self):
+        return self.__main_frame
 
      
 class Entity(Drawable, Updatable):
@@ -141,12 +146,14 @@ class Entity(Drawable, Updatable):
         pass
      
 class Simulation(Updatable):
-    def __init__(self, sprites:list[Entity]):
+    def __init__(self, sprites:list[Entity]=None):
         self.__sprites = sprites
 
     def tick(self):
         for sprite in self.__sprites:
             sprite.tick()
+
+        self.after(10, self.tick)
 
 
 class MainFrame(ttk.Frame, Drawable):
@@ -158,6 +165,10 @@ class MainFrame(ttk.Frame, Drawable):
         self.__main_panel.grid(row=0, column=0, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
         
+    
+    @property
+    def view_window(self):
+        return self.__view_window
         
 
 
@@ -195,7 +206,19 @@ class ViewWindow(ttk.Label, Drawable):
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
 
+    def tick(self):
+        i = Image.new(mode='RGB', size=(self.width, self.height), color=(0,0,0))
+        draw = ImageDraw.Draw(i)
 
+        for ball in self.g.balls:
+            draw.ellipse([(ball.position.x - ball.radius, ball.position.y - ball.radius), (ball.position.x + ball.radius, ball.position.y + ball.radius)], ball.fill_color, ball.border_color)
+            ball.trail.tick(ball)
+            for point in ball.trail.points:
+                draw.point((point.x, point.y), ball.fill_color)
+       
+        self.tki = ImageTk.PhotoImage(i)
+        self.w["image"] = self.tki
+        
 
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
@@ -241,8 +264,9 @@ class Circle(Entity, Touchable):
     def draw(self):
         return ([(self.__position.x - self.__radius, self.__position.y - self.__radius), self.__position.x + self.__radius, self.__position.y + self.__radius], self.__fill_color, self.__border_color)
 
-    def tick(self, time):
+    def tick(self, time, canvas):
         self.move(time)
+        self.draw(canvas)
 
 class StaticCircle(Circle):
     def __init__(self):
@@ -250,7 +274,7 @@ class StaticCircle(Circle):
 
 
 class SteeringBehavior():
-    def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
+    def __init__(self, attraction_repulsion_force=None, distance_to_target=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
         self.__resulting_direction = None
@@ -284,19 +308,17 @@ class FleeArrival(SteeringBehavior):
  
     
 class Seek(SteeringBehavior):
-    def __init__(self):
-        super().__init__(self)
+    def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
+        SteeringBehavior.__init__(self, attraction_repulsion_force, distance_to_target)
         
     def behave(self, this_entity: Entity, target_entity: Entity):
         return super().behave(this_entity, target_entity)
     
 class Piloted():
-    def __init__(self, slowing_distance:int, steering_force:Vect2D, desired_speed:Vect2D, steering_behaviors:list[SteeringBehavior], acceleration:Vect2D, max_steering_force:Vect2D):
+    def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__slowing_distance = slowing_distance
         self.__steering_force = steering_force
-        self.__desired_speed = desired_speed
         self.__steering_behaviors = steering_behaviors
-        self.__max_steering_force = max_steering_force
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
@@ -323,7 +345,7 @@ class DynamicCircle(Circle, Movable, Piloted):
 
         Circle.__init__(border_color, fill_color, position, radius)
         Movable.__init__(acceleration, max_speed, speed)
-        Piloted.__init__(slowing_distance, steering_force, steering_behaviors, )
+        Piloted.__init__(slowing_distance, steering_force, steering_behaviors)
 
     def move(self, time):
         Movable.move(time)
