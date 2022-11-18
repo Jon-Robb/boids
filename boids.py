@@ -79,7 +79,9 @@ class Movable():
 
         self.__position += self.__speed * time + self.__acceleration * 0.5 ** 2
 
-
+    @property
+    def max_speed(self):
+        return self.__max_speed
 class Touchable():
     def __init__(self):
         pass
@@ -248,14 +250,14 @@ class StaticCircle(Circle):
 
 
 class SteeringBehavior():
-    def __init__(self):
-        self.__force_attraction_repulsion = None
+    def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
+        self.__attraction_repulsion_force = attraction_repulsion_force
+        self.__distance_to_target = distance_to_target
         self.__resulting_direction = None
-        
+
     @abstractmethod    
     def behave(self, origin_entity:Entity, target_entity:Entity):
-        return target_entity.position - origin_entity.position
-  
+        pass  
     
 class CollisionAvoidance(SteeringBehavior):
     def __init__(self):
@@ -298,7 +300,11 @@ class Piloted():
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            steering_behavior.behave(self, target_entity)
+            self.__steering_force += steering_behavior.behave(self, target_entity)
+        
+        if self.__steering_force.length > self.max_speed:
+            self.__steering_force.length = self.max_speed
+        
 
 
 class DynamicCircle(Circle, Movable, Piloted):
