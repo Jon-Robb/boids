@@ -16,21 +16,25 @@ class RGBAColor():
         if randomize:
             self.randomize_color()
         
-        @property
-        def r(self):
-            return self.__r
+    @property
+    def r(self):
+        return self.__r
         
-        @property
-        def g(self):
-            return self.__g
+    @property
+    def g(self):
+        return self.__g
         
-        @property
-        def b(self):
-            return self.__b
+    @property
+    def b(self):
+        return self.__b
         
-        @property
-        def a(self):
-            return self.__a
+    @property
+    def a(self):
+        return self.__a
+    
+    @property
+    def rgba(self):
+        return (self.__r, self.__b, self.__g, self.__a)
 
         
     def randomize_color(self):
@@ -58,8 +62,12 @@ class Drawable():
         return self.__size
     
     @property
-    def color(self):
-        return self.__color
+    def fill_color_(self):
+        return self.__fill_color.rgba
+
+    @property
+    def border_color_(self):
+        return self.__border_color.rgba
     
     @property
     def position(self):
@@ -188,12 +196,15 @@ class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, fill_color=None, position=None, size=None):
         ttk.Label.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color, fill_color, position, size)
-        self.__image = Image.new('RGBA', (int(400), int(100)), (0, 0, 0))
+        self.__image = Image.new('RGBA', (int(400), int(500)), (0, 0, 0))
         self.__image_draw = ImageDraw.Draw(self.__image)
+        self.__ball = DynamicCircle()
+        self.__ball.draw(self.__image_draw)
         self.__image_tk = ImageTk.PhotoImage(self.__image)
         self.__image_label = ttk.Label(self, image=self.__image_tk)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
+
 
 
 
@@ -232,14 +243,21 @@ class SimParamPanel(ParamPanel):
 class Circle(Entity, Touchable):
     def __init__(self, border_color, fill_color, position:Vect2D, radius:int):
         Entity.__init__(self, border_color=border_color, fill_color=fill_color, position=position, size=(radius*2, radius*2))
-
+        self.__fill_color = fill_color
+        self.__border_color = border_color
         self.__radius = radius
 
     def check_collision(self):
         Touchable.check_collision() 
 
-    def draw(self):
-        return ([(self.__position.x - self.__radius, self.__position.y - self.__radius), self.__position.x + self.__radius, self.__position.y + self.__radius], self.__fill_color, self.__border_color)
+    def draw(self, image_draw):
+        image_draw.ellipse(
+        [self.position.x,
+        self.position.y,
+        self.position.x + self.__radius,
+        self.position.y + self.__radius],
+        fill=self.__fill_color.rgba,
+        outline=self.__border_color.rgba)
 
     def tick(self, time):
         self.move(time)
@@ -291,12 +309,10 @@ class Seek(SteeringBehavior):
         return super().behave(this_entity, target_entity)
     
 class Piloted():
-    def __init__(self, slowing_distance:int, steering_force:Vect2D, desired_speed:Vect2D, steering_behaviors:list[SteeringBehavior], acceleration:Vect2D, max_steering_force:Vect2D):
+    def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__slowing_distance = slowing_distance
         self.__steering_force = steering_force
-        self.__desired_speed = desired_speed
         self.__steering_behaviors = steering_behaviors
-        self.__max_steering_force = max_steering_force
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
@@ -320,10 +336,10 @@ class DynamicCircle(Circle, Movable, Piloted):
                     steering_force=Vect2D(0,0),
                     steering_behaviors=None,
                 ):
-
-        Circle.__init__(border_color, fill_color, position, radius)
-        Movable.__init__(acceleration, max_speed, speed)
-        Piloted.__init__(slowing_distance, steering_force, steering_behaviors, )
+    
+        Circle.__init__(self, border_color, fill_color, position, radius)
+        Movable.__init__(self, acceleration, max_speed, speed)
+        Piloted.__init__(self, slowing_distance, steering_force, steering_behaviors)
 
     def move(self, time):
         Movable.move(time)
