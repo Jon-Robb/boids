@@ -196,7 +196,7 @@ class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, fill_color=None, position=None, size=None):
         ttk.Label.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color, fill_color, position, size)
-        self.__image = Image.new('RGBA', (int(400), int(500)), (0, 0, 0))
+        self.__image = Image.new('RGBA', (int(1425), int(780)), (0, 0, 0))
         self.__image_draw = ImageDraw.Draw(self.__image)
         self.__ball = DynamicCircle()
         self.__ball.draw(self.__image_draw)
@@ -327,8 +327,8 @@ class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     fill_color=RGBAColor(randomize=True),
-                    position=Vect2D(random.randrange(0,100),random.randrange(0,100)),
-                    radius=random.randrange(5,10),
+                    position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                    radius=random.randrange(30,100),
                     acceleration=Vect2D(0,100),
                     speed=Vect2D(random.randrange(-10,10),random.randrange(-10,10)),
                     max_speed=1,
