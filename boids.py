@@ -111,7 +111,10 @@ class App(Updatable):
         self.__simulation = Simulation()
 
     def tick(self):
-        self.__simulation.tick(time=None,  canvas=self.__gui.__main_frame.__view_window)    
+        self.__simulation.tick(time=0.1,  canvas=self.__gui.__main_frame.__view_window) 
+
+        self.after(10, self.tick)
+   
     
 class GUI(Tk):
     
@@ -160,9 +163,6 @@ class Simulation(Updatable):
     def tick(self):
         for sprite in self.__sprites:
             sprite.tick()
-
-        self.after(10, self.tick)
-
 
 class MainFrame(ttk.Frame, Drawable):
     def __init__(self, border_color=None, fill_color=None, position=None, size:Vect2D=None):
