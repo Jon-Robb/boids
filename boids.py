@@ -107,7 +107,8 @@ class Updatable():
 
 class App(Updatable):
     def __init__(self):
-        self.__gui = GUI(500,500)
+        
+        self.__gui = GUI()
         self.__simulation = Simulation()
 
     def tick(self):
@@ -118,13 +119,13 @@ class App(Updatable):
     
 class GUI(Tk):
     
-    def __init__(self, width, height):
+    def __init__(self):
         Tk.__init__(self)
-        self.__main_frame = MainFrame(Vect2D(500,500), RGBAColor(0 ,0, 0), Vect2D(0,0)) 
+        self.__size = Vect2D(Tk.winfo_screenwidth(self), Tk.winfo_screenheight(self))
+
+        self.__main_frame = MainFrame(size=Vect2D(self.__size.x * 0.5,self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
         self.title('Boids')
-        self.__width = width
-        self.__height = height
-        self.geometry(str(int(self.__width)) + 'x' + str(int(self.__height)))
+        self.geometry(str(int(self.__size.x * 0.5)) + 'x' + str(int(self.__size.y * 0.8)))
         self.iconbitmap('boids.ico')
 
         self.mainloop()
@@ -169,7 +170,7 @@ class MainFrame(ttk.Frame, Drawable):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  fill_color, position, size)
         self.__main_panel = ControlBar("Main Panel")
-        self.__view_window = ViewWindow(size, fill_color)   
+        self.__view_window = ViewWindow(size=(size.x * 0.8, size.y * 0.9), fill_color=fill_color)   
         self.__main_panel.grid(row=0, column=0, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
         
@@ -205,9 +206,9 @@ class StartStopPanel(ttk.LabelFrame):
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, fill_color=None, position=None, size=None):
-        ttk.Label.__init__(self, root=None, text=None)
+        ttk.Label.__init__(self, root=None, text=None, width=size[0])
         Drawable.__init__(self, border_color, fill_color, position, size)
-        self.__image = Image.new('RGBA', (int(1425), int(780)), (0, 0, 0))
+        self.__image = Image.new('RGBA', (int(size[0]), int(size[1])), (0, 0, 0))
         self.__image_draw = ImageDraw.Draw(self.__image)
         self.__ball = DynamicCircle()
         self.__ball.draw(self.__image_draw)
