@@ -37,14 +37,16 @@ class RGBAColor():
         self.__r = random.randint(0, 255)
         self.__g = random.randint(0, 255)
         self.__b = random.randint(0, 255)
-        self.__g = random.randint(0, 255)
+        self.__a = random.randint(0, 255)
 
 
 class Drawable():
-    def __init__(self, size:Vect2D, color:RGBAColor, position:Vect2D):
-        self.__size = size
-        self.__color = color
+    def __init__(self, border_color, fill_color, position:Vect2D, size:Vect2D):
+        self.__border_color = border_color
+        self.__fill_color = fill_color
         self.__position = position
+        self.__size = size
+
 
     @abstractmethod
     def draw(self):
@@ -65,13 +67,17 @@ class Drawable():
 
 
 class Movable():
-    def __init__(self, speed, max_speed):
+    def __init__(self, acceleration, max_speed, speed):
+        self.__acceleration = acceleration
         self.__speed = speed
         self.__max_speed = max_speed
 
 
     def move(self, time):
-        self.__position += self.__speed * time
+        if self.__speed > self.__max_speed:
+            self.__speed == self.__max_speed
+
+        self.__position += self.__speed * time + self.__acceleration * 0.5 ** 2
 
 
 class Touchable():
@@ -120,8 +126,8 @@ class GUI(Tk):
 
      
 class Entity(Drawable, Updatable):
-    def __init__(self):
-        Drawable.__init__(self, fill_color=None, border_color=None, position=None, size=None)
+    def __init__(self, border_color, fill_color, position, size):
+        Drawable.__init__(self, border_color, fill_color, position, size)
         Updatable.__init__(self)
 
     @abstractmethod
@@ -142,11 +148,11 @@ class Simulation(Updatable):
 
 
 class MainFrame(ttk.Frame, Drawable):
-    def __init__(self, size:Vect2D, color, position=None):
+    def __init__(self, border_color=None, fill_color=None, position=None, size:Vect2D=None):
         ttk.Frame.__init__(self, root=None, text=None)
-        Drawable.__init__(self, size, color, position)
+        Drawable.__init__(self, border_color,  fill_color, position, size)
         self.__main_panel = ControlBar("Main Panel")
-        self.__view_window = ViewWindow(size, color)   
+        self.__view_window = ViewWindow(size, fill_color)   
         self.__main_panel.grid(row=0, column=0, sticky='nsew')
         self.__view_window.grid(row=0, column=1, sticky="nsew") 
         
@@ -184,9 +190,9 @@ class StartStopPanel(ttk.LabelFrame):
 
 
 class ViewWindow(ttk.Label, Drawable):
-    def __init__(self, size, color, position=None):
+    def __init__(self, border_color=None, fill_color=None, position=None, size=None):
         ttk.Label.__init__(self, root=None, text=None)
-        Drawable.__init__(self, size, color, position)
+        Drawable.__init__(self, border_color, fill_color, position, size)
         self.__image = Image.new('RGBA', (int(400), int(100)), (0, 0, 0))
         self.__image_draw = ImageDraw.Draw(self.__image)
         self.__image_tk = ImageTk.PhotoImage(self.__image)
@@ -228,10 +234,9 @@ class SimParamPanel(ParamPanel):
     def check_collision(self):
         pass
     
-class Circle(Entity, Movable, Touchable):
-    def __init__(self, border_color=RGBAColor(randomize=True), fill_color=RGBAColor(randomize=True), max_speed=1, position:Vect2D=Vect2D(random.randrange(0,100),random.randrange(0,100)), radius:int=random.randrange(5,10), speed:Vect2D=Vect2D(random.randrange(-10,10),random.randrange(-10,10))):
+class Circle(Entity, Touchable):
+    def __init__(self, border_color, fill_color, position:Vect2D, radius:int):
         Entity.__init__(self, border_color=border_color, fill_color=fill_color, position=position, size=(radius*2, radius*2))
-        Movable.__init__(self, max_speed=max_speed, speed=speed)
 
         self.__radius = radius
 
@@ -240,10 +245,6 @@ class Circle(Entity, Movable, Touchable):
 
     def draw(self):
         return ([(self.__position.x - self.__radius, self.__position.y - self.__radius), self.__position.x + self.__radius, self.__position.y + self.__radius], self.__fill_color, self.__border_color)
-
-    def move(self, time):
-        Movable.move(time)
-
 
     def tick(self, time):
         self.move(time)
@@ -259,24 +260,24 @@ class SteeringBehavior():
         self.__resulting_direction = None
         
     @abstractmethod    
-    def behave(self, this_entity:Entity, target_entity:Entity):
-        return target_entity.position - this_entity.position
+    def behave(self, origin_entity:Entity, target_entity:Entity):
+        return target_entity.position - origin_entity.position
   
     
 class CollisionAvoidance(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
         
-    def behave(self, this_entity: Entity, target_entity: Entity):
-        return super().behave(this_entity, target_entity)
+    def behave(self, origin_entity: Entity, target_entity: Entity):
+        return super().behave(origin_entity, target_entity)
  
     
 class Wander(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
         
-    def behave(self, this_entity: Entity, target_entity: Entity):
-        return super().behave(this_entity, target_entity)
+    def behave(self, origin_entity: Entity, target_entity: Entity):
+        return super().behave(origin_entity, target_entity)
  
     
 class FleeArrival(SteeringBehavior):
@@ -294,23 +295,39 @@ class Seek(SteeringBehavior):
     def behave(self, this_entity: Entity, target_entity: Entity):
         return super().behave(this_entity, target_entity)
     
-class Piloted(Movable):
-    def __init__(self, slowing_distance:int, steering_force:Vect2D, desired_speed:Vect2D, steering_behavior:list[SteeringBehavior], acceleration:Vect2D, max_steering_force:Vect2D):
+class Piloted():
+    def __init__(self, slowing_distance:int, steering_force:Vect2D, desired_speed:Vect2D, steering_behaviors:list[SteeringBehavior], acceleration:Vect2D, max_steering_force:Vect2D):
         self.__slowing_distance = slowing_distance
         self.__steering_force = steering_force
         self.__desired_speed = desired_speed
-        self.__steering_behavior = steering_behavior
-        self.__acceleration = acceleration
+        self.__steering_behaviors = steering_behaviors
         self.__max_steering_force = max_steering_force
-    
-    @abstractmethod
-    def move(self):
-        pass
 
-class DynamicCircle(Circle, Piloted):
-    def __init__(self, vitesse, vitesse_max):
-        self.__vitesse = vitesse
-        self.__vitesse_max = vitesse_max
+    def steer(self, target_entity=None):
+        for steering_behavior in self.__steering_behaviors:
+            steering_behavior.behave(self, target_entity)
+
+
+class DynamicCircle(Circle, Movable, Piloted):
+    def __init__(   self,
+                    border_color=RGBAColor(randomize=True),
+                    fill_color=RGBAColor(randomize=True),
+                    position=Vect2D(random.randrange(0,100),random.randrange(0,100)),
+                    radius=random.randrange(5,10),
+                    acceleration=Vect2D(0,100),
+                    speed=Vect2D(random.randrange(-10,10),random.randrange(-10,10)),
+                    max_speed=1,
+                    slowing_distance=10,
+                    steering_force=Vect2D(0,0),
+                    steering_behaviors=None,
+                ):
+
+        Circle.__init__(border_color, fill_color, position, radius)
+        Movable.__init__(acceleration, max_speed, speed)
+        Piloted.__init__(slowing_distance, steering_force, steering_behaviors, )
+
+    def move(self, time):
+        Movable.move(time)
     
 
 
