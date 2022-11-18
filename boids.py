@@ -154,7 +154,7 @@ class MainFrame(ttk.Frame, Drawable):
         self.__main_panel = ControlBar("Main Panel")
         self.__view_window = ViewWindow(size, fill_color)   
         self.__main_panel.grid(row=0, column=0, sticky='nsew')
-        self.__view_window.grid(row=0, column=1, sticky="nsew") 
+        self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
         
         
 
@@ -168,14 +168,7 @@ class ControlBar(ttk.Frame):
         self.__control_panel.grid(row=0, column=0)
         self.__param_panel.grid(row=1, column=0)
         self.__visual_param_panel.grid(row=2, column=0)
-        self.__control_panel.rowconfigure(0, minsize=200, weight=1)
-        self.__control_panel.columnconfigure(0, minsize=200, weight=1)
-        self.__param_panel.rowconfigure(1, minsize=200, weight=1)
-        self.__param_panel.columnconfigure(1, minsize=200, weight=1)
-        self.__visual_param_panel.rowconfigure(2, minsize=200, weight=1)
-        self.__visual_param_panel.columnconfigure(2, minsize=200, weight=1)
-        self.grid(row=0, column=0, sticky='ns')
-        
+
 
 
 class StartStopPanel(ttk.LabelFrame):
