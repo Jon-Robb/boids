@@ -34,7 +34,7 @@ class RGBAColor():
     
     @property
     def rgba(self):
-        return (self.__r, self.__b, self.__g, self.__a)
+        return (self.__r, self.__g, self.__b, self.__a)
 
         
     def randomize_color(self):
@@ -45,8 +45,9 @@ class RGBAColor():
 
 
 class Drawable():
-    def __init__(self, border_color, fill_color, position:Vect2D, size:Vect2D):
+    def __init__(self, border_color, border_width, fill_color, position:Vect2D, size:Vect2D):
         self.__border_color = border_color
+        self.__border_width = border_width
         self.__fill_color = fill_color
         self.__position = position
         self.__size = size
@@ -59,18 +60,46 @@ class Drawable():
     @property
     def size(self):
         return self.__size
+
+    @property
+    def width(self):
+        return self.__size.x
+
+    @property
+    def height(self):
+        return self.__size.y
     
     @property
-    def fill_color_(self):
+    def fill_color(self):
         return self.__fill_color.rgba
 
     @property
-    def border_color_(self):
+    def border_color(self):
         return self.__border_color.rgba
+
+    @property
+    def border_width(self):
+        return self.__border_width
     
     @property
     def position(self):
         return self.__position
+
+    @property
+    def pos_x(self):
+        return self.__position.x
+
+    @property
+    def pos_y(self):
+        return self.__position.y
+
+    @pos_x.setter
+    def pos_x(self, pos_x):
+        self.__position.x = pos_x
+
+    @pos_y.setter
+    def pos_y(self, pos_y):
+        self.__position.y = pos_y
 
     @position.setter
     def position(self, position):
@@ -84,18 +113,52 @@ class Movable():
 
 
     def move(self, time):
-        self.position += self.__speed * time + self.__acceleration * 0.5 ** 2
+        self.position += self.speed * time + self.acceleration * 0.5 ** 2
 
     @property
     def max_speed(self):
         return self.__max_speed
-class Touchable():
-    def __init__(self):
-        pass
 
-    @abstractmethod
-    def checkCollision(self):
-        pass
+    @property
+    def speed(self):
+        return self.__speed
+
+    @property
+    def acceleration(self):
+        return self.__acceleration
+class Touchable():
+    def __init__(self, friction_coeff, bounce_coeff):
+        self.__friction_coeff = friction_coeff
+        self.__bounce_coeff = bounce_coeff
+
+    def bounce(self, sim_dim:Vect2D):
+        if self.pos_x <= 0 + self.radius:
+            border = 0
+            self.speed.x = -self.speed.x * self.__bounce_coeff
+            self.speed.y *= self.__friction_coeff
+            self.pos_x = 2.0 * (border + self.radius) - self.pos_x
+
+        elif self.pos_x >= sim_dim.x - self.radius :
+            border = sim_dim.x
+            self.speed.x = -self.speed.x * self.__bounce_coeff
+            self.speed.y *= self.__friction_coeff
+            self.pos_x = 2.0 * (border - self.radius) - self.pos_x
+
+        if self.pos_y <= 0 + self.radius :
+            border = 0
+            self.speed.y = -self.speed.y * self.__bounce_coeff
+            self.speed.x *= self.__friction_coeff
+            self.pos_y = 2.0 * (border + self.radius) - self.pos_y
+
+        elif self.pos_y >= sim_dim.y - self.radius :
+            border = sim_dim.y
+            self.speed.y = -self.speed.y * self.__bounce_coeff
+            self.speed.x *= self.__friction_coeff
+            self.pos_y = 2.0 * (border - self.radius) - self.pos_y
+
+    @property
+    def bounce_coeff(self):
+        return self.__bounce_coeff
 
 class Updatable():
     def __init__(self):
@@ -117,40 +180,41 @@ class App(Tk, Updatable):
     def __init__(self):
         Tk.__init__(self)
         self.__size = Vect2D(Tk.winfo_screenwidth(self), Tk.winfo_screenheight(self))
-
-        self.__gui = GUI(size=Vect2D(self.__size.x * 0.5,self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
+        self.__gui = GUI(size=Vect2D(self.__size.x * 0.5, self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
         self.title('Boids')
         self.geometry(str(int(self.__size.x * 0.5)) + 'x' + str(int(self.__size.y * 0.8)))
         self.iconbitmap('boids.ico')
 
-        self.__simulation = Simulation()
+        self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
-        # self.tick()
+        self.tick()
 
         self.mainloop()
 
+    @property
+    def size(self):
+        return self.__size
+
 
     def tick(self):
-        for sprite in self.__simulation.sprites:
-            print(sprite.position)
+        #self.__simulation.tick(time=0.1, sim_dim=Vect2D(500,500))
 
-        self.__simulation.tick(time=0.1, draw=self.__gui.view_window.image_draw) 
-
+        self.__simulation.tick(time=0.1, sim_dim=Vect2D(self.__simulation.width, self.__simulation.height))
+        self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
-
-               
-    # GUI getters #    
+                   
+    # APP getters #    
     @property
     def width(self):
-        return self.__width
+        return self.__size.x
 
     @property
     def height(self):
-        return self.__height
+        return self.__size.y
      
 class Entity(Drawable, Updatable):
-    def __init__(self, border_color, fill_color, position, size):
-        Drawable.__init__(self, border_color, fill_color, position, size)
+    def __init__(self, border_color, border_width, fill_color, position, size):
+        Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
 
     @abstractmethod
@@ -162,36 +226,62 @@ class Entity(Drawable, Updatable):
         pass
      
 class Simulation(Updatable):
-    def __init__(self, nb_sprites:int=2):
+    def __init__(self, nb_circles:int=2, size=Vect2D(100,100)):
 
+        self.__size = size
         self.__sprites = []
+        for _ in range(nb_circles):
+            random_radius = random.randrange(5,50)
+            self.__sprites.append(DynamicCircle(
+                                                border_color=RGBAColor(randomize=True),
+                                                border_width=random.randrange(0, random_radius),
+                                                fill_color=RGBAColor(randomize=True),
+                                                #position=Vect2D(random.randrange(0,501),200),
+                                                radius=random_radius,
+                                                position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
+                                                acceleration=Vect2D(0,0),
+                                                #speed=Vect2D(0,0),
+                                                speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+                                                max_speed=1,
+                                                slowing_distance=10,
+                                                steering_force=Vect2D(0,0),
+                                                steering_behaviors=None,
+                                                ))
 
-        for _ in range(nb_sprites):
-            self.__sprites.append(DynamicCircle())
-
-    def tick(self, time, draw):
+    def tick(self, time, sim_dim):
         if self.__sprites:
             for sprite in self.__sprites:
-                sprite.tick(time, draw)
+                sprite.tick(time, sim_dim)
 
     @property
     def sprites(self):
         return self.__sprites
 
+    @property
+    def size(self):
+        return self.__size
+
+    @property
+    def width(self):
+        return self.__size.x
+
+    @property
+    def height(self):
+        return self.__size.y
+
 class GUI(ttk.Frame, Drawable):
-    def __init__(self, border_color=None, fill_color=None, position=None, size:Vect2D=None):
+    def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size:Vect2D=None):
         ttk.Frame.__init__(self, root=None, text=None)
-        Drawable.__init__(self, border_color,  fill_color, position, size)
+        Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar("Main Panel")
-        self.__view_window = ViewWindow(size=(size.x * 0.8, size.y * 0.9), fill_color=fill_color)   
+        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.8, size.y * 0.9), fill_color=fill_color)   
         self.__main_panel.grid(row=0, column=0, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
         
     
     @property
     def view_window(self):
-        return self.__view_window
-        
+        return self.__view_window  
 
 
 class ControlBar(ttk.Frame):
@@ -218,30 +308,50 @@ class StartStopPanel(ttk.LabelFrame):
 
 
 class ViewWindow(ttk.Label, Drawable):
-    def __init__(self, border_color=None, fill_color=None, position=None, size=None):
-        ttk.Label.__init__(self, root=None, text=None, width=size[0])
-        Drawable.__init__(self, border_color, fill_color, position, size)
-        self.__image = Image.new('RGBA', (int(size[0]), int(size[1])), (0, 0, 0))
-        self.__image_draw = ImageDraw.Draw(self.__image)
-        self.__ball = DynamicCircle()
-        self.__ball.draw(self.__image_draw)
-        self.__image_tk = ImageTk.PhotoImage(self.__image)
-        self.__ball = DynamicCircle()
-        self.__ball.draw(self.__image_draw)
+    def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
+        ttk.Label.__init__(self, root=None, text=None, width=size.x)
+        Drawable.__init__(self, border_color, border_width, fill_color, position, size)
+        self.__canvas = Image.new('RGBA', (int(size.x), int(size.y)), (0, 0, 0))
+        self.__image_draw = ImageDraw.Draw(self.__canvas)
+        self.__image_tk = ImageTk.PhotoImage(self.__canvas)
         self.__image_label = ttk.Label(self, image=self.__image_tk)
+        # self.__ball = DynamicCircle(position=Vect2D(100,100))
+        # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
 
+    def update_view(self, simulation):
 
+            i = Image.new('RGBA', (int(self.width), int(self.height)), (0, 0, 0))
+            draw = ImageDraw.Draw(i)
+
+            for sprite in simulation.sprites:
+                sprite.draw(draw)
+        
+            self.__image_tk = ImageTk.PhotoImage(i)
+            self.__image_label["image"] = self.__image_tk
+
+            # self.tki = ImageTk.PhotoImage(self.__gui.view_window.canvas)
+            # self.__gui.view_window.image_label["image"] = self.tki
+
+            # self.after(10, self.tick)  
 
 
     @property
-    def image(self):
-        return self.__image
+    def canvas(self):
+        return self.__canvas
 
     @property
     def image_draw(self):
-        return self.__image_draw        
+        return self.__image_draw     
+
+    @property
+    def image_label(self):
+        return self.__image_label    
+
+    @canvas.setter
+    def canvas(self, canvas):
+        self.__canvas = canvas
 
 
 class ParamPanel(ttk.LabelFrame):
@@ -277,28 +387,37 @@ class SimParamPanel(ParamPanel):
         pass
     
 class Circle(Entity, Touchable):
-    def __init__(self, border_color, fill_color, position:Vect2D, radius:int):
-        Entity.__init__(self, border_color=border_color, fill_color=fill_color, position=position, size=(radius*2, radius*2))
+    def __init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position:Vect2D, radius:int):
+        Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
+        Touchable.__init__(self, bounce_coeff=bounce_coeff, friction_coeff=friction_coeff)
         self.__fill_color = fill_color
         self.__border_color = border_color
         self.__radius = radius
 
-    def check_collision(self):
-        Touchable.check_collision() 
+    def bounce(self):
+        Touchable.bounce() 
 
     def draw(self, draw):
+        
         draw.ellipse(
-        [self.position.x,
-        self.position.y,
-        self.position.x + self.__radius,
-        self.position.y + self.__radius],
-        fill=self.__fill_color.rgba,
-        outline=self.__border_color.rgba)
+                [self.position.x - self.__radius,
+                self.position.y - self.__radius,
+                self.position.x + self.__radius,
+                self.position.y + self.__radius],
+                fill=self.fill_color,
+                width=self.border_width,
+                outline=self.border_color)
+       
+        # self.tki = ImageTk.PhotoImage(canvas)
+        # label["image"] = self.tki
 
-    def tick(self, time, draw):
-        self.move(time)
-        self.draw(draw)
+    @abstractmethod
+    def tick(self, time):
+        pass
 
+    @property
+    def radius(self):
+        return self.__radius
 class StaticCircle(Circle):
     def __init__(self):
         Circle.init(self)
@@ -363,10 +482,13 @@ class Piloted():
 class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
+                    border_width=5,
+                    bounce_coeff=0.95,
                     fill_color=RGBAColor(randomize=True),
+                    friction_coeff=0.95,
                     position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
                     radius=random.randrange(30,100),
-                    acceleration=Vect2D(0,100),
+                    acceleration=Vect2D(0,0),
                     speed=Vect2D(random.randrange(-10,10),random.randrange(-10,10)),
                     max_speed=1,
                     slowing_distance=10,
@@ -374,12 +496,19 @@ class DynamicCircle(Circle, Movable, Piloted):
                     steering_behaviors=None,
                 ):
     
-        Circle.__init__(self, border_color, fill_color, position, radius)
+        Circle.__init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, slowing_distance, steering_force, steering_behaviors)
 
     def move(self, time):
         Movable.move(self, time)
+
+    def bounce(self, sim_dim):
+        Touchable.bounce(self, sim_dim)
+
+    def tick(self, time, sim_dim):
+        self.move(time)
+        self.bounce(sim_dim)
     
 
 
