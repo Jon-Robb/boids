@@ -1,4 +1,3 @@
-import math
 import random
 from abc import abstractmethod
 from tkinter import Tk, ttk
@@ -113,7 +112,7 @@ class Movable():
 
 
     def move(self, time):
-        self.position += self.speed * time + self.acceleration * 0.5 ** 2
+        self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
 
     @property
     def max_speed(self):
@@ -126,6 +125,7 @@ class Movable():
     @property
     def acceleration(self):
         return self.__acceleration
+        
 class Touchable():
     def __init__(self, friction_coeff, bounce_coeff):
         self.__friction_coeff = friction_coeff
@@ -179,11 +179,13 @@ class App(Tk, Updatable):
     
     def __init__(self):
         Tk.__init__(self)
-        self.__size = Vect2D(Tk.winfo_screenwidth(self), Tk.winfo_screenheight(self))
-        self.__gui = GUI(size=Vect2D(self.__size.x * 0.5, self.__size.y * 0.8), fill_color=RGBAColor(0 ,0, 0)) 
+        self.__size = Vect2D(Tk.winfo_screenwidth(self) * 0.5, Tk.winfo_screenheight(self) * 0.8)
+        self.__gui = GUI(size=Vect2D(self.__size.x, self.__size.y), fill_color=RGBAColor(0 ,0, 0)) 
         self.title('Boids')
-        self.geometry(str(int(self.__size.x * 0.5)) + 'x' + str(int(self.__size.y * 0.8)))
+        self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
+        self.geometry()
         self.iconbitmap('boids.ico')
+
 
         self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
@@ -273,9 +275,9 @@ class GUI(ttk.Frame, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size:Vect2D=None):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
-        self.__main_panel = ControlBar("Main Panel")
-        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.8, size.y * 0.9), fill_color=fill_color)   
-        self.__main_panel.grid(row=0, column=0, sticky='nsew')
+        self.__main_panel = ControlBar()
+        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.82, size.y * 0.99), fill_color=fill_color)   
+        self.__main_panel.grid(row=0, column=0, rowspan=3, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
         
     
@@ -285,8 +287,8 @@ class GUI(ttk.Frame, Drawable):
 
 
 class ControlBar(ttk.Frame):
-    def __init__(self, title):
-        ttk.Frame.__init__(self, title=None)
+    def __init__(self):
+        ttk.Frame.__init__(self)
         self.__control_panel = StartStopPanel("Control")
         self.__param_panel = ParamPanel("Paramètre")
         self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
@@ -510,7 +512,6 @@ class DynamicCircle(Circle, Movable, Piloted):
         self.move(time)
         self.bounce(sim_dim)
     
-
 
 def main():
     App()
