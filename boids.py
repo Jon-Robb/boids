@@ -279,8 +279,8 @@ class GUI(ttk.Frame, Drawable):
         self.__view_window = ViewWindow(size=Vect2D(size.x * 0.82, size.y * 0.99), fill_color=fill_color)   
         self.__main_panel.grid(row=0, column=0, rowspan=3, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
-        
-    
+
+
     @property
     def view_window(self):
         return self.__view_window  
