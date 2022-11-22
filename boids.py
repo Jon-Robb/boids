@@ -264,7 +264,7 @@ class Simulation(Updatable):
                                                 max_steering_force=10,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[FleeArrival()]
+                                                steering_behaviors=[Seek()]
                                                 ))
 
     def tick(self, time, sim_dim):
@@ -515,7 +515,7 @@ class Piloted():
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            if isinstance(steering_behavior, Seek) or isinstance(steering_behavior, FleeArrival) and target_entity is not None:
+            if (isinstance(steering_behavior, Seek) or isinstance(steering_behavior, FleeArrival)) and target_entity is not None:
                 self.steering_force += steering_behavior.behave(self, target_entity)
         
         self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
