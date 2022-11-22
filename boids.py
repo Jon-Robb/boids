@@ -1,6 +1,6 @@
 import random
 from abc import abstractmethod
-from this import d
+# from this import d
 from tkinter import Tk, ttk
 from turtle import position
 from PIL import Image, ImageDraw, ImageTk
@@ -116,6 +116,7 @@ class Movable():
 
     def move(self, time):
         self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
+        self.speed = self.steering_force
 
     @property
     def max_speed(self):
@@ -128,6 +129,10 @@ class Movable():
     @property
     def acceleration(self):
         return self.__acceleration
+
+    @speed.setter
+    def speed(self, speed):
+        self.__speed = speed
         
 class Touchable():
     def __init__(self, friction_coeff, bounce_coeff):
@@ -191,6 +196,8 @@ class App(Tk, Updatable):
         # self.mouse_pos = MousePos()
         self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
+        self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
+
         self.tick()
         
         # self.bind('<Motion>', self.mouse_pos.move_mouse)
@@ -236,7 +243,7 @@ class Simulation(Updatable):
 
         self.__size = size
         self.__sprites = []
-        self.__mouse_pos = MousePos()
+        self.__mouse_pos = Vect2D()
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
             self.__sprites.append(DynamicCircle(
@@ -252,13 +259,17 @@ class Simulation(Updatable):
                                                 max_speed=1,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Seek()],
+                                                steering_behaviors=[Seek()]
                                                 ))
 
     def tick(self, time, sim_dim):
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time, sim_dim, self)
+
+    def move_mouse(self, event):
+        self.__mouse_pos = Vect2D(event.x, event.y)
+        print(self.mouse_pos)
 
     @property
     def sprites(self):
@@ -330,10 +341,7 @@ class ViewWindow(ttk.Label, Drawable):
         # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
-        
-        self.mouse_pos = MousePos()
 
-        self.__image_label.bind('<Motion>', self.mouse_pos.move_mouse)
 
     def update_view(self, simulation):
 
@@ -488,13 +496,6 @@ class MousePos():
     def __init__(self):
         self.__mouse_pos = None
 
-    def move_mouse(self, event):
-            self.__mouse_pos = Vect2D(event.x, event.y)
-            print(self.mouse_pos)
-            
-    @property
-    def mouse_pos(self):
-        return self.__mouse_pos
            
 class Piloted():
     def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
@@ -504,11 +505,15 @@ class Piloted():
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            if  isinstance(steering_behavior, Seek) and target_entity is not None:
+            if isinstance(steering_behavior, Seek) and target_entity is not None:
                 self.__steering_force += steering_behavior.behave(self, target_entity)
         
-        if self.__steering_force.length > self.max_speed:
-            self.__steering_force.length = self.max_speed
+        # if self.__steering_force.length > self.max_speed:
+        #     self.__steering_force.length = self.max_speed
+
+    @property
+    def steering_force(self):
+        return self.__steering_force
         
 class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
@@ -538,7 +543,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.mouse_pos.mouse_pos)
+        self.steer(target_entity=simulation.mouse_pos)
         self.move(time)
         self.bounce(sim_dim)
     
