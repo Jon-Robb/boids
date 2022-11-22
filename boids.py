@@ -256,7 +256,7 @@ class Simulation(Updatable):
                                                 acceleration=Vect2D(0,0),
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_speed=1,
+                                                max_speed=100,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
                                                 steering_behaviors=[Seek()]
@@ -485,7 +485,7 @@ class Seek(SteeringBehavior):
     #Pour suivre le mouvement de la souris 
     def behave(self, local_entity:Entity, target_entity: Vect2D):
         if target_entity is not None:
-            desired_speed = (local_entity.position - target_entity) * local_entity.max_speed
+            desired_speed = (target_entity - local_entity.position).normalized * local_entity.max_speed
             return desired_speed - local_entity.speed
         # steering_force = math.truncate(steering_force, self.max_speed)
         # self.speed = math.truncate(self.speed + steering_force, self.max_speed)
