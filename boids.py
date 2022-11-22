@@ -1,5 +1,6 @@
 import random
 from abc import abstractmethod
+from this import d
 from tkinter import Tk, ttk
 from PIL import Image, ImageDraw, ImageTk
 from vect2d import Vect2D
@@ -185,12 +186,13 @@ class App(Tk, Updatable):
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
         self.geometry()
         self.iconbitmap('boids.ico')
-
-
+        self.mouse_pos = MousePos()
         self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.tick()
-
+        
+        self.bind('<Motion>', self.mouse_pos.move_mouse)
+        
         self.mainloop()
 
     @property
@@ -321,6 +323,8 @@ class ViewWindow(ttk.Label, Drawable):
         # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
+        
+        
 
     def update_view(self, simulation):
 
@@ -465,6 +469,24 @@ class Seek(SteeringBehavior):
         
     def behave(self, this_entity: Entity, target_entity: Entity):
         return super().behave(this_entity, target_entity)
+    
+    def behave(self, origin_entity: Entity, target_entity: Vect2D):
+        
+        return super().behave(origin_entity, target_entity)
+
+class MousePos():
+    
+    def __init__(self):
+        self.__mouse_pos = None
+
+    def move_mouse(self, event):
+            self.__mouse_pos = Vect2D(event.x, event.y)
+            print(self.mouse_pos)
+            
+    @property
+    def mouse_pos(self):
+        return self.__mouse_pos
+        
     
 class Piloted():
     def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
