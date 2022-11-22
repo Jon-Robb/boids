@@ -119,7 +119,7 @@ class Movable():
 
     def move(self, time):
         self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
-        self.speed = self.steering_force
+        self.speed += self.steering_force
 
     @property
     def max_speed(self):
@@ -257,10 +257,10 @@ class Simulation(Updatable):
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=30,
+                                                max_speed=100,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_steering_force=0.01,
+                                                max_steering_force=10,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
                                                 steering_behaviors=[Seek()]
@@ -273,7 +273,6 @@ class Simulation(Updatable):
 
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
-        print(self.mouse_pos)
 
     @property
     def sprites(self):
@@ -491,9 +490,6 @@ class Seek(SteeringBehavior):
         if target_entity is not None:
             desired_speed = (target_entity - local_entity.position).normalized * local_entity.max_speed
             return desired_speed - local_entity.speed
-        # steering_force = math.truncate(steering_force, self.max_speed)
-        # self.speed = math.truncate(self.speed + steering_force, self.max_speed)
-        # self.position = self.position + self.speed
         
 class MousePos():
     
@@ -505,19 +501,24 @@ class Piloted():
     def __init__(self, max_steering_force:int, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__max_steering_force = max_steering_force
         self.__slowing_distance = slowing_distance
-        self.__steering_force = steering_force
+        self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
             if isinstance(steering_behavior, Seek) and target_entity is not None:
-                self.__steering_force += steering_behavior.behave(self, target_entity)
+                self.steering_force += steering_behavior.behave(self, target_entity)
         
-        Clamper.clamp_max(self.__steering_force.length, self.__max_steering_force)
+        self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         pass
+    
     @property
     def steering_force(self):
         return self.__steering_force
+
+    @steering_force.setter
+    def steering_force(self, steering_force):
+        self.__steering_force = steering_force
         
 class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
