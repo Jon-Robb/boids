@@ -200,6 +200,7 @@ class App(Tk, Updatable):
         self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
+        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.move_left)
 
         self.tick()
         
@@ -273,6 +274,12 @@ class Simulation(Updatable):
 
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
+        
+    def move_left(self, event):
+        self.__mouse_pos = None
+        
+        for sprite in self.__sprites:
+            sprite.steering_force = Vect2D(0,0)
 
     @property
     def sprites(self):
