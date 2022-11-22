@@ -1,8 +1,11 @@
 import random
 from abc import abstractmethod
+from this import d
 from tkinter import Tk, ttk
+from turtle import position
 from PIL import Image, ImageDraw, ImageTk
 from vect2d import Vect2D
+import math
 
 
 class RGBAColor():
@@ -185,12 +188,13 @@ class App(Tk, Updatable):
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
         self.geometry()
         self.iconbitmap('boids.ico')
-
-
+        # self.mouse_pos = MousePos()
         self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.tick()
-
+        
+        # self.bind('<Motion>', self.mouse_pos.move_mouse)
+        
         self.mainloop()
 
     @property
@@ -232,6 +236,7 @@ class Simulation(Updatable):
 
         self.__size = size
         self.__sprites = []
+        self.__mouse_pos = MousePos()
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
             self.__sprites.append(DynamicCircle(
@@ -247,18 +252,22 @@ class Simulation(Updatable):
                                                 max_speed=1,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=None,
+                                                steering_behaviors=[Seek()],
                                                 ))
 
     def tick(self, time, sim_dim):
         if self.__sprites:
             for sprite in self.__sprites:
-                sprite.tick(time, sim_dim)
+                sprite.tick(time, sim_dim, self)
 
     @property
     def sprites(self):
         return self.__sprites
-
+    
+    @property
+    def mouse_pos(self):
+        return self.__mouse_pos
+    
     @property
     def size(self):
         return self.__size
@@ -321,6 +330,10 @@ class ViewWindow(ttk.Label, Drawable):
         # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
+        
+        self.mouse_pos = MousePos()
+
+        self.__image_label.bind('<Motion>', self.mouse_pos.move_mouse)
 
     def update_view(self, simulation):
 
@@ -381,9 +394,7 @@ class SimParamPanel(ParamPanel):
     @property
     def sprites(self):
         return self.__sprites
-    
-
-    
+     
     @abstractmethod
     def check_collision(self):
         pass
@@ -420,10 +431,10 @@ class Circle(Entity, Touchable):
     @property
     def radius(self):
         return self.__radius
+    
 class StaticCircle(Circle):
     def __init__(self):
         Circle.init(self)
-
 
 class SteeringBehavior():
     def __init__(self, attraction_repulsion_force=None, distance_to_target=None):
@@ -441,16 +452,14 @@ class CollisionAvoidance(SteeringBehavior):
         
     def behave(self, origin_entity: Entity, target_entity: Entity):
         return super().behave(origin_entity, target_entity)
- 
-    
+  
 class Wander(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
         
     def behave(self, origin_entity: Entity, target_entity: Entity):
         return super().behave(origin_entity, target_entity)
- 
-    
+   
 class FleeArrival(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
@@ -458,14 +467,35 @@ class FleeArrival(SteeringBehavior):
     def behave(self, this_entity: Entity, target_entity: Entity):
         return super().behave(this_entity, target_entity)
  
-    
 class Seek(SteeringBehavior):
     def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
         SteeringBehavior.__init__(self, attraction_repulsion_force, distance_to_target)
         
     def behave(self, this_entity: Entity, target_entity: Entity):
-        return super().behave(this_entity, target_entity)
+        pass
     
+    #Pour suivre le mouvement de la souris 
+    def behave(self, local_entity:Entity, target_entity: Vect2D):
+        if target_entity is not None:
+            desired_speed = (local_entity.position - target_entity) * local_entity.max_speed
+            return desired_speed - local_entity.speed
+        # steering_force = math.truncate(steering_force, self.max_speed)
+        # self.speed = math.truncate(self.speed + steering_force, self.max_speed)
+        # self.position = self.position + self.speed
+        
+class MousePos():
+    
+    def __init__(self):
+        self.__mouse_pos = None
+
+    def move_mouse(self, event):
+            self.__mouse_pos = Vect2D(event.x, event.y)
+            print(self.mouse_pos)
+            
+    @property
+    def mouse_pos(self):
+        return self.__mouse_pos
+           
 class Piloted():
     def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__slowing_distance = slowing_distance
@@ -474,13 +504,12 @@ class Piloted():
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            self.__steering_force += steering_behavior.behave(self, target_entity)
+            if  isinstance(steering_behavior, Seek) and target_entity is not None:
+                self.__steering_force += steering_behavior.behave(self, target_entity)
         
         if self.__steering_force.length > self.max_speed:
             self.__steering_force.length = self.max_speed
         
-
-
 class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
@@ -508,14 +537,13 @@ class DynamicCircle(Circle, Movable, Piloted):
     def bounce(self, sim_dim):
         Touchable.bounce(self, sim_dim)
 
-    def tick(self, time, sim_dim):
+    def tick(self, time, sim_dim, simulation):
+        self.steer(target_entity=simulation.mouse_pos.mouse_pos)
         self.move(time)
         self.bounce(sim_dim)
     
-
 def main():
     App()
-
 
 if __name__ == '__main__':
     main()
