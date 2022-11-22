@@ -7,6 +7,9 @@ from PIL import Image, ImageDraw, ImageTk
 from vect2d import Vect2D
 import math
 
+class Clamper():
+    def clamp_max(value, max):
+        return min(value, max)
 
 class RGBAColor():
     def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255, randomize:bool=False):
@@ -254,9 +257,10 @@ class Simulation(Updatable):
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
+                                                max_speed=30,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_speed=100,
+                                                max_steering_force=0.01,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
                                                 steering_behaviors=[Seek()]
@@ -498,7 +502,8 @@ class MousePos():
 
            
 class Piloted():
-    def __init__(self, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
+    def __init__(self, max_steering_force:int, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
+        self.__max_steering_force = max_steering_force
         self.__slowing_distance = slowing_distance
         self.__steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
@@ -508,9 +513,8 @@ class Piloted():
             if isinstance(steering_behavior, Seek) and target_entity is not None:
                 self.__steering_force += steering_behavior.behave(self, target_entity)
         
-        # if self.__steering_force.length > self.max_speed:
-        #     self.__steering_force.length = self.max_speed
-
+        Clamper.clamp_max(self.__steering_force.length, self.__max_steering_force)
+        pass
     @property
     def steering_force(self):
         return self.__steering_force
@@ -527,6 +531,7 @@ class DynamicCircle(Circle, Movable, Piloted):
                     acceleration=Vect2D(0,0),
                     speed=Vect2D(random.randrange(-10,10),random.randrange(-10,10)),
                     max_speed=1,
+                    max_steering_force=1,
                     slowing_distance=10,
                     steering_force=Vect2D(0,0),
                     steering_behaviors=None,
@@ -534,7 +539,7 @@ class DynamicCircle(Circle, Movable, Piloted):
     
         Circle.__init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
-        Piloted.__init__(self, slowing_distance, steering_force, steering_behaviors)
+        Piloted.__init__(self, max_steering_force, slowing_distance, steering_force, steering_behaviors)
 
     def move(self, time):
         Movable.move(self, time)
