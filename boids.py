@@ -265,7 +265,9 @@ class Simulation(Updatable):
         return self.__sprites
     
     @property
-
+    def mouse_pos(self):
+        return self.__mouse_pos
+    
     @property
     def size(self):
         return self.__size
@@ -474,8 +476,9 @@ class Seek(SteeringBehavior):
     
     #Pour suivre le mouvement de la souris 
     def behave(self, local_entity:Entity, target_entity: Vect2D):
-        desired_speed = (local_entity.position - target_entity) * local_entity.max_speed
-        return desired_speed - local_entity.speed
+        if target_entity is not None:
+            desired_speed = (local_entity.position - target_entity) * local_entity.max_speed
+            return desired_speed - local_entity.speed
         # steering_force = math.truncate(steering_force, self.max_speed)
         # self.speed = math.truncate(self.speed + steering_force, self.max_speed)
         # self.position = self.position + self.speed
@@ -501,7 +504,8 @@ class Piloted():
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            self.__steering_force += steering_behavior.behave(self, target_entity)
+            if  isinstance(steering_behavior, Seek) and target_entity is not None:
+                self.__steering_force += steering_behavior.behave(self, target_entity)
         
         if self.__steering_force.length > self.max_speed:
             self.__steering_force.length = self.max_speed
@@ -534,7 +538,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        # self.steer(target_entity=simulation.mouse)
+        self.steer(target_entity=simulation.mouse_pos.mouse_pos)
         self.move(time)
         self.bounce(sim_dim)
     
