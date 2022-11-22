@@ -119,7 +119,7 @@ class Movable():
 
     def move(self, time):
         self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
-        self.speed = self.steering_force
+        self.speed += self.steering_force
 
     @property
     def max_speed(self):
@@ -197,9 +197,10 @@ class App(Tk, Updatable):
         self.geometry()
         self.iconbitmap('boids.ico')
         # self.mouse_pos = MousePos()
-        self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(nb_circles=1, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
+        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.move_left)
 
         self.tick()
         
@@ -257,10 +258,10 @@ class Simulation(Updatable):
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=30,
+                                                max_speed=130,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_steering_force=0.01,
+                                                max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
                                                 steering_behaviors=[Seek()]
@@ -273,7 +274,12 @@ class Simulation(Updatable):
 
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
-        print(self.mouse_pos)
+        
+    def move_left(self, event):
+        self.__mouse_pos = None
+        
+        for sprite in self.__sprites:
+            sprite.steering_force = Vect2D(0,0)
 
     @property
     def sprites(self):
@@ -398,18 +404,6 @@ class VisualParamPanel(ttk.LabelFrame):
 class SimParamPanel(ParamPanel):
     def __init__(self):
         pass    
-
-    @abstractmethod
-    def draw(self):
-        pass
-    
-    @property
-    def sprites(self):
-        return self.__sprites
-     
-    @abstractmethod
-    def check_collision(self):
-        pass
     
 class Circle(Entity, Touchable):
     def __init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position:Vect2D, radius:int):
@@ -476,8 +470,10 @@ class FleeArrival(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
         
-    def behave(self, this_entity: Entity, target_entity: Entity):
-        return super().behave(this_entity, target_entity)
+    def behave(self, local_entity: Entity, target_entity: Entity):
+        if target_entity is not None:
+            desired_speed = ( local_entity.position - target_entity).normalized * local_entity.max_speed
+            return desired_speed - local_entity.speed
  
 class Seek(SteeringBehavior):
     def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
@@ -491,9 +487,6 @@ class Seek(SteeringBehavior):
         if target_entity is not None:
             desired_speed = (target_entity - local_entity.position).normalized * local_entity.max_speed
             return desired_speed - local_entity.speed
-        # steering_force = math.truncate(steering_force, self.max_speed)
-        # self.speed = math.truncate(self.speed + steering_force, self.max_speed)
-        # self.position = self.position + self.speed
         
 class MousePos():
     
@@ -505,19 +498,24 @@ class Piloted():
     def __init__(self, max_steering_force:int, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__max_steering_force = max_steering_force
         self.__slowing_distance = slowing_distance
-        self.__steering_force = steering_force
+        self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
 
     def steer(self, target_entity=None):
         for steering_behavior in self.__steering_behaviors:
-            if isinstance(steering_behavior, Seek) and target_entity is not None:
-                self.__steering_force += steering_behavior.behave(self, target_entity)
+            if (isinstance(steering_behavior, Seek) or isinstance(steering_behavior, FleeArrival)) and target_entity is not None:
+                self.steering_force += steering_behavior.behave(self, target_entity)
         
-        Clamper.clamp_max(self.__steering_force.length, self.__max_steering_force)
+        self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         pass
+    
     @property
     def steering_force(self):
         return self.__steering_force
+
+    @steering_force.setter
+    def steering_force(self, steering_force):
+        self.__steering_force = steering_force
         
 class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
