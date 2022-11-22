@@ -197,7 +197,7 @@ class App(Tk, Updatable):
         self.geometry()
         self.iconbitmap('boids.ico')
         # self.mouse_pos = MousePos()
-        self.__simulation = Simulation(nb_circles=5, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(nb_circles=1, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
 
@@ -257,10 +257,10 @@ class Simulation(Updatable):
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=100,
+                                                max_speed=130,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_steering_force=10,
+                                                max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
                                                 steering_behaviors=[Seek()]
@@ -397,18 +397,6 @@ class VisualParamPanel(ttk.LabelFrame):
 class SimParamPanel(ParamPanel):
     def __init__(self):
         pass    
-
-    @abstractmethod
-    def draw(self):
-        pass
-    
-    @property
-    def sprites(self):
-        return self.__sprites
-     
-    @abstractmethod
-    def check_collision(self):
-        pass
     
 class Circle(Entity, Touchable):
     def __init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position:Vect2D, radius:int):
