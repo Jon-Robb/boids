@@ -200,7 +200,7 @@ class App(Tk, Updatable):
         self.geometry()
         self.iconbitmap('boids.ico')
         # self.mouse_pos = MousePos()
-        self.__simulation = Simulation(nb_circles=2, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(nb_circles=20, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.move_left)
@@ -267,7 +267,7 @@ class Simulation(Updatable):
                                                 max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Evade()]
+                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=10000)]
                                                 ))
 
         self.sprites.append(DynamicCircle(
