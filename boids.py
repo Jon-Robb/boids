@@ -511,7 +511,7 @@ class Seek(SteeringBehavior):
         
 class Flee(Seek):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         
     def behave(self, local_entity: Entity, target_entity: Vect2D):
         return super().behave(local_entity, target_entity) * -1   
@@ -523,7 +523,7 @@ class Flee(Seek):
         
 class Pursuit(SteeringBehavior):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.__ratio = 2
         
     def behave(self, origin_entity: Entity, target_entity: Entity) -> Vect2D:
@@ -549,7 +549,7 @@ class BorderRepulsion(SteeringBehavior):
                      
 class Evade(Pursuit):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         
     def behave(self, local_entity: Entity, target_entity: Vect2D):
         return super().behave(local_entity, target_entity) * -1   
