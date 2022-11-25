@@ -120,8 +120,9 @@ class Movable():
     def move(self, time):
         self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
         self.speed += self.steering_force
-        # self.speed.clamp_x(0, self.max_speed)
-        # self.speed.clamp_y(0, self.max_speed)
+        
+        self.speed.clamp_x(-self.max_speed, self.max_speed)
+        self.speed.clamp_y(-self.max_speed, self.max_speed)
 
     @property
     def max_speed(self):
@@ -260,13 +261,13 @@ class Simulation(Updatable):
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=1000,
+                                                max_speed=100,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
                                                 max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Seek()]
+                                                steering_behaviors=[Evade()]
                                                 ))
 
         self.sprites.append(DynamicCircle(
@@ -277,7 +278,7 @@ class Simulation(Updatable):
                             radius=random_radius,
                             position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                             acceleration=Vect2D(0,0),
-                            max_speed=1000,
+                            max_speed=100,
                             #speed=Vect2D(0,0),
                             speed=Vect2D(100,100),
                             max_steering_force=15,
@@ -512,13 +513,13 @@ class Flee(Seek):
     def __init__(self):
         super().__init__(self)
         
-    # def behave(self, local_entity: Entity, target_entity: Entity):
+    def behave(self, local_entity: Entity, target_entity: Vect2D):
+        return super().behave(local_entity, target_entity) * -1   
+    
+      # def behave(self, local_entity: Entity, target_entity: Entity):
     #     if target_entity is not None:
     #         desired_speed = (local_entity.position - target_entity.position).normalized * local_entity.max_speed
     #         return desired_speed - local_entity.speed
-    
-    def behave(self, local_entity: Entity, target_entity: Vect2D):
-        return super().behave(local_entity, target_entity) * -1   
         
 class Pursuit(SteeringBehavior):
     def __init__(self):
@@ -530,6 +531,8 @@ class Pursuit(SteeringBehavior):
             estimated_position = target_entity.position + target_entity.speed  * self.__ratio 
             desired_speed = (estimated_position - origin_entity.position).normalized * origin_entity.max_speed
             return desired_speed - origin_entity.speed
+        pass
+        return Vect2D(0, 0)
             
 class BorderRepulsion(SteeringBehavior):
     def __init__(self):       
@@ -542,14 +545,14 @@ class BorderRepulsion(SteeringBehavior):
         repulsive_force_bottom = (Vect2D(0, -1))/(sim_dim.y - origin_entity.position.y) ** 2 if origin_entity.position.y < sim_dim.y else Vect2D(0, -1)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
 
-  
-                    
+
+                     
 class Evade(Pursuit):
     def __init__(self):
         super().__init__(self)
         
-    def behave(self, origin_entity: Entity, target_entity: Entity) -> Vect2D:
-        return super().behave(origin_entity, target_entity) * -1
+    def behave(self, local_entity: Entity, target_entity: Vect2D):
+        return super().behave(local_entity, target_entity) * -1   
     
             
 
@@ -609,7 +612,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.mouse_pos, sim_dim=sim_dim)
+        self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         self.move(time)
         self.bounce(sim_dim)
     
