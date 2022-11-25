@@ -266,7 +266,7 @@ class Simulation(Updatable):
                                                 max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Evade()]
+                                                steering_behaviors=[Seek()]
                                                 ))
 
         self.sprites.append(DynamicCircle(
@@ -492,16 +492,21 @@ class Seek(SteeringBehavior):
         SteeringBehavior.__init__(self, attraction_repulsion_force, distance_to_target)
       
         
-    def behave(self, local_entity: Entity, target_entity: Entity):
+    def behave(self, local_entity: Entity, target_entity: Entity | Vect2D):
         if target_entity is not None:
-            desired_speed = (target_entity.position - local_entity.position).normalized * local_entity.max_speed
-            return desired_speed - local_entity.speed
+            if isinstance(target_entity, Entity):
+                desired_speed = (target_entity.position - local_entity.position).normalized * local_entity.max_speed
+                return desired_speed - local_entity.speed
+            else:
+                desired_speed = (target_entity - local_entity.position).normalized * local_entity.max_speed
+                return desired_speed - local_entity.speed
+            
     
-    #Pour suivre le mouvement de la souris 
-    def behave(self, local_entity:Entity, target_entity: Vect2D):
-        if target_entity is not None:
-            desired_speed = (target_entity.position - local_entity.position).normalized * local_entity.max_speed
-            return desired_speed - local_entity.speed
+    # Pour suivre le mouvement de la souris 
+    # def behave(self, local_entity:Entity, target_entity: Vect2D):
+    #     if target_entity is not None:
+    #         desired_speed = (target_entity.position - local_entity.position).normalized * local_entity.max_speed
+    #         return desired_speed - local_entity.speed
         
 class Flee(Seek):
     def __init__(self):
@@ -511,7 +516,7 @@ class Flee(Seek):
     #     if target_entity is not None:
     #         desired_speed = (local_entity.position - target_entity.position).normalized * local_entity.max_speed
     #         return desired_speed - local_entity.speed
-        
+    
     def behave(self, local_entity: Entity, target_entity: Vect2D):
         return super().behave(local_entity, target_entity) * -1   
         
@@ -604,7 +609,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.sprites[-1].position, sim_dim=sim_dim)
+        self.steer(target_entity=simulation.mouse_pos, sim_dim=sim_dim)
         self.move(time)
         self.bounce(sim_dim)
     
