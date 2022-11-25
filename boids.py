@@ -264,7 +264,7 @@ class Simulation(Updatable):
                                                 max_steering_force=15,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Seek()]
+                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=2)]
                                                 ))
 
         self.sprites.append(DynamicCircle(
@@ -432,6 +432,7 @@ class Circle(Entity, Touchable):
 
     def bounce(self):
         Touchable.bounce() 
+        
 
     def draw(self, draw):
         
@@ -469,6 +470,10 @@ class SteeringBehavior():
     def behave(self, origin_entity:Entity, target_entity:Entity):
         pass  
     
+    @property
+    def attraction_repulsion_force(self):
+        return self.__attraction_repulsion_force
+
 class CollisionAvoidance(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
@@ -517,14 +522,15 @@ class Pursuit(SteeringBehavior):
             return desired_speed - origin_entity.speed
             
 class BorderRepulsion(SteeringBehavior):
-    def __init__(self):       
-        super().__init__(self) 
-    
+    def __init__(self, attraction_repulsion_force):       
+        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
+
     def behave(self, origin_entity:Entity, sim_dim):
-        repulsive_force_left = (Vect2D(1, 0))/origin_entity.position.x ** 2 if origin_entity.position.x > 0 else Vect2D(1, 0)
-        repulsive_force_right = (Vect2D(-1, 0))/(sim_dim.x - origin_entity.position.x) ** 2 if origin_entity.position.x < sim_dim.x else Vect2D(-1, 0)
-        repulsive_force_top = (Vect2D(0, 1))/origin_entity.position.y ** 2 if origin_entity.position.y > 0 else Vect2D(0, 1)
-        repulsive_force_bottom = (Vect2D(0, -1))/(sim_dim.y - origin_entity.position.y) ** 2 if origin_entity.position.y < sim_dim.y else Vect2D(0, -1)
+        force = self.attraction_repulsion_force
+        repulsive_force_left = (Vect2D(force, 0))/(origin_entity.position.x-origin_entity.width/2) ** 2 if origin_entity.position.x-origin_entity.width/2 > 0 else Vect2D(1, 0)
+        repulsive_force_right = (Vect2D(-force, 0))/(sim_dim.x - origin_entity.position.x + origin_entity.width/2) ** 2 if origin_entity.position.x + origin_entity.width/2 < sim_dim.x else Vect2D(-1, 0)
+        repulsive_force_top = (Vect2D(0, force))/(origin_entity.position.y - origin_entity.height/2) ** 2 if origin_entity.position.y - origin_entity.height/2 > 0 else Vect2D(0, 1)
+        repulsive_force_bottom = (Vect2D(0, -force))/(sim_dim.y - origin_entity.position.y + origin_entity.height/2) ** 2 if origin_entity.position.y + origin_entity.height/2 < sim_dim.y else Vect2D(0, -1)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
 
 
@@ -547,7 +553,7 @@ class Piloted():
                 if (isinstance(steering_behavior, Seek) or isinstance(steering_behavior, FleeArrival) or isinstance(steering_behavior, Pursuit)) and target_entity is not None:
                     self.steering_force += steering_behavior.behave(self, target_entity)
                 elif isinstance(steering_behavior, BorderRepulsion):
-                    self.steering_force += steering_behavior.behave(origin_entity = self,sim_dim=sim_dim)
+                    self.steering_force += steering_behavior.behave(origin_entity= self,sim_dim=sim_dim)
             
         self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
@@ -591,7 +597,7 @@ class DynamicCircle(Circle, Movable, Piloted):
     def tick(self, time, sim_dim, simulation):
         self.steer(target_entity=simulation.sprites[-1].position, sim_dim=sim_dim)
         self.move(time)
-        self.bounce(sim_dim)
+        #self.bounce(sim_dim)
     
 def main():
     App()
