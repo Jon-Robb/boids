@@ -545,10 +545,16 @@ class BorderRepulsion(SteeringBehavior):
 
     def behave(self, origin_entity:Entity, sim_dim):
         force = self.attraction_repulsion_force
-        repulsive_force_left = (Vect2D(force, 0))/(origin_entity.position.x-origin_entity.width/2) ** 2 if origin_entity.position.x-origin_entity.width/2 > 0 else Vect2D(1, 0)
-        repulsive_force_right = (Vect2D(-force, 0))/(sim_dim.x - origin_entity.position.x + origin_entity.width/2) ** 2 if origin_entity.position.x + origin_entity.width/2 < sim_dim.x else Vect2D(-1, 0)
-        repulsive_force_top = (Vect2D(0, force))/(origin_entity.position.y - origin_entity.height/2) ** 2 if origin_entity.position.y - origin_entity.height/2 > 0 else Vect2D(0, 1)
-        repulsive_force_bottom = (Vect2D(0, -force))/(sim_dim.y - origin_entity.position.y + origin_entity.height/2) ** 2 if origin_entity.position.y + origin_entity.height/2 < sim_dim.y else Vect2D(0, -1)
+
+        distance_from_left = origin_entity.position.x - origin_entity.width / 2
+        distance_from_right = sim_dim.x - origin_entity.position.x - origin_entity.width / 2
+        distance_from_top = origin_entity.position.y - origin_entity.height / 2
+        distance_from_bottom = sim_dim.y - origin_entity.position.y - origin_entity.height / 2
+
+        repulsive_force_left = (Vect2D(force, 0))/(distance_from_left) ** 2 if distance_from_left > 0 else Vect2D(1, 0)
+        repulsive_force_right = (Vect2D(-force, 0))/(distance_from_right) ** 2 if distance_from_right < sim_dim.x else Vect2D(-1, 0)
+        repulsive_force_top = (Vect2D(0, force))/(distance_from_top) ** 2 if distance_from_top > 0 else Vect2D(0, 1)
+        repulsive_force_bottom = (Vect2D(0, -force))/(distance_from_bottom) ** 2 if distance_from_bottom < sim_dim.y else Vect2D(0, -1)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
 
 
