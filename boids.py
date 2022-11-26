@@ -466,7 +466,7 @@ class StaticCircle(Circle):
         Circle.init(self)
 
 class SteeringBehavior():
-    def __init__(self, attraction_repulsion_force=None, distance_to_target=None):
+    def __init__(self, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
         self.__resulting_direction = None
@@ -500,7 +500,7 @@ class Seek(SteeringBehavior):
         SteeringBehavior.__init__(self, attraction_repulsion_force, distance_to_target)
       
         
-    def behave(self, local_entity: Entity, target_entity: Entity | Vect2D):
+    def behave(self, local_entity: Entity, target_entity: Entity | Vect2D) -> Vect2D:
         if target_entity is not None:
             if isinstance(target_entity, Entity):
                 desired_speed = (target_entity.position - local_entity.position).normalized * local_entity.max_speed
@@ -520,7 +520,7 @@ class Flee(Seek):
     def __init__(self):
         super().__init__()
         
-    def behave(self, local_entity: Entity, target_entity: Vect2D):
+    def behave(self, local_entity: Entity, target_entity: Vect2D )-> Vect2D:
         return super().behave(local_entity, target_entity) * -1   
     
       # def behave(self, local_entity: Entity, target_entity: Entity):
@@ -565,7 +565,7 @@ class Evade(Pursuit):
     def __init__(self):
         super().__init__()
         
-    def behave(self, local_entity: Entity, target_entity: Vect2D):
+    def behave(self, local_entity: Entity, target_entity: Vect2D)-> Vect2D:
         return super().behave(local_entity, target_entity) * -1   
     
             
@@ -626,7 +626,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.mouse_pos, sim_dim=sim_dim)
+        self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         self.move(time)
         # self.bounce(sim_dim)
     
