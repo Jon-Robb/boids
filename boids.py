@@ -626,7 +626,8 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
+        self.steer(target_entity=simulation.mouse_pos, sim_dim=sim_dim)
+        # self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         self.move(time)
         # self.bounce(sim_dim)
     
