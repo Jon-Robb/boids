@@ -250,7 +250,7 @@ class Simulation(Updatable):
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
-            random_steering_behavior = random.choice([Seek(), Flee()])
+            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000))])
 
             self.__sprites.append(DynamicCircle(
                                                 border_color=RGBAColor(randomize=True),
@@ -267,24 +267,24 @@ class Simulation(Updatable):
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=500), random_steering_behavior]))
+                                                steering_behaviors=[BorderRepulsion(), random_steering_behavior]))
 
-        # self.sprites.append(DynamicCircle(
-        #                     border_color=RGBAColor(randomize=True),
-        #                     border_width=random.randrange(0, random_radius),
-        #                     fill_color=RGBAColor(randomize=True),
-        #                     #position=Vect2D(random.randrange(0,501),200),
-        #                     radius=random_radius,
-        #                     position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-        #                     acceleration=Vect2D(0,0),
-        #                     max_speed=100,
-        #                     #speed=Vect2D(0,0),
-        #                     speed=Vect2D(100,100),
-        #                     max_steering_force=15,
-        #                     slowing_distance=10,
-        #                     steering_force=Vect2D(0,0),
-        #                     steering_behaviors=None
-        # ))
+        self.sprites.append(DynamicCircle(
+                            border_color=RGBAColor(randomize=True),
+                            border_width=random.randrange(0, random_radius),
+                            fill_color=RGBAColor(randomize=True),
+                            #position=Vect2D(random.randrange(0,501),200),
+                            radius=random_radius,
+                            position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
+                            acceleration=Vect2D(0,0),
+                            max_speed=100,
+                            #speed=Vect2D(0,0),
+                            speed=Vect2D(100,100),
+                            max_steering_force=15,
+                            slowing_distance=10,
+                            steering_force=Vect2D(0,0),
+                            steering_behaviors=[BorderRepulsion(attraction_repulsion_force=250)]
+        ))
         
     def tick(self, time, sim_dim):
         if self.__sprites:
@@ -626,7 +626,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Touchable.bounce(self, sim_dim)
 
     def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=simulation.mouse_pos, sim_dim=sim_dim)
+        self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         # self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         self.move(time)
         # self.bounce(sim_dim)
