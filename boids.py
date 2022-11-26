@@ -201,8 +201,9 @@ class App(Tk, Updatable):
         self.iconbitmap('boids.ico')
         self.__simulation = Simulation(nb_circles=20, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
+        self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
-        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.move_left)
+        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
 
         self.tick()
                 
@@ -245,24 +246,24 @@ class Simulation(Updatable):
 
         self.__size = size
         self.__sprites = []
-        self.__mouse_pos = Vect2D()
+        self.__mouse_pos = None
+
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
             self.__sprites.append(DynamicCircle(
                                                 border_color=RGBAColor(randomize=True),
                                                 border_width=random.randrange(0, random_radius),
                                                 fill_color=RGBAColor(randomize=True),
-                                                #position=Vect2D(random.randrange(0,501),200),
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=100,
+                                                max_speed=150,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                max_steering_force=15,
+                                                max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Flee(), BorderRepulsion(attraction_repulsion_force=3333)]
+                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=50), Seek()]
                                                 ))
 
         # self.sprites.append(DynamicCircle(
@@ -290,11 +291,14 @@ class Simulation(Updatable):
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
         
-    def move_left(self, event):
+    def mouse_left(self, event):
         self.__mouse_pos = None
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
+
+    def mouse_entered(self, event):
+        self.__mouse_pos = Vect2D(event.x, event.y)
 
     @property
     def sprites(self):
@@ -546,10 +550,10 @@ class BorderRepulsion(SteeringBehavior):
         distance_from_top = origin_entity.position.y - origin_entity.height / 2
         distance_from_bottom = sim_dim.y - origin_entity.position.y - origin_entity.height / 2
 
-        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 0.5, 0) if distance_from_left > 0 else Vect2D(1, 0)
-        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 0.5, 0) if distance_from_right > 0 else Vect2D(-1, 0)
-        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 0.5, 2) if distance_from_top > 0 else Vect2D(0, 1)
-        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 0.5, 0) if distance_from_bottom > 0 else Vect2D(0, -1)
+        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 0.5, 0) if distance_from_left > 0 else Vect2D(force, 0)
+        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 0.5, 0) if distance_from_right > 0 else Vect2D(-force, 0)
+        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 0.5, 2) if distance_from_top > 0 else Vect2D(0, force)
+        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 0.5, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
 
 
@@ -621,7 +625,7 @@ class DynamicCircle(Circle, Movable, Piloted):
     def tick(self, time, sim_dim, simulation):
         self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
         self.move(time)
-        #self.bounce(sim_dim)
+        # self.bounce(sim_dim)
     
 def main():
     App()
