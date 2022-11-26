@@ -491,7 +491,7 @@ class Wander(SteeringBehavior):
         super().__init__()
         self.__distance = None
         self.__radius = radius
-        self.__on_or_in = bool
+        self.__on_or_in = False
         self.__random_vec = Vect2D.from_random_normalized()
         
     def behave(self, origin_entity: Entity, target_entity: Entity):      
@@ -499,7 +499,12 @@ class Wander(SteeringBehavior):
         desired_speed = origin_entity.position + origin_entity.speed
         desired_speed *= self.__distance + self.__random_vec
         desired_speed *= self.__radius
-        return desired_speed - origin_entity.speed
+        if not self.__on_or_in:
+            self.__on_or_in = True
+            return desired_speed - origin_entity.speed
+        else:
+            self.__on_or_in = False
+            return desired_speed + origin_entity.speed * -1
  
 class Seek(SteeringBehavior):
     def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
