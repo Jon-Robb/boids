@@ -267,7 +267,7 @@ class Simulation(Updatable):
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[BorderRepulsion(), random_steering_behavior]))
+                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=500), random_steering_behavior]))
 
         self.sprites.append(DynamicCircle(
                             border_color=RGBAColor(randomize=True),
