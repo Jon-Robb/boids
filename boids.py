@@ -199,7 +199,7 @@ class App(Tk, Updatable):
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
         self.geometry()
         self.iconbitmap('boids.ico')
-        self.__simulation = Simulation(nb_circles=20, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(nb_circles=50, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
@@ -250,21 +250,24 @@ class Simulation(Updatable):
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
+            random_steering_behavior = random.choice([Seek(), Flee()])
+
             self.__sprites.append(DynamicCircle(
                                                 border_color=RGBAColor(randomize=True),
+                                                # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
                                                 border_width=random.randrange(0, random_radius),
-                                                fill_color=RGBAColor(randomize=True),
+                                                # fill_color=RGBAColor(randomize=True),
+                                                fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
                                                 radius=random_radius,
                                                 position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                                                 acceleration=Vect2D(0,0),
-                                                max_speed=150,
+                                                max_speed=100,
                                                 #speed=Vect2D(0,0),
                                                 speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=50), Seek()]
-                                                ))
+                                                steering_behaviors=[BorderRepulsion(attraction_repulsion_force=500), random_steering_behavior]))
 
         # self.sprites.append(DynamicCircle(
         #                     border_color=RGBAColor(randomize=True),
