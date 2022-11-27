@@ -487,24 +487,50 @@ class CollisionAvoidance(SteeringBehavior):
         return super().behave(origin_entity, target_entity)
   
 class Wander(SteeringBehavior):
-    def __init__(self, radius:float=1):
+    def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
         super().__init__()
-        self.__distance = None
+        self.__circle_distance = circle_distance
         self.__radius = radius
+        self.__angle_change = angle_change
         self.__on_or_in = False
-        self.__random_vec = Vect2D.from_random_normalized()
+        self.__wander_angle = random.random() * 2 * math.pi
         
-    def behave(self, origin_entity: Entity, target_entity: Entity):      
-        self.__distance = self.__random_vec - origin_entity.position
-        desired_speed = origin_entity.position + origin_entity.speed
-        desired_speed *= self.__distance + self.__random_vec
-        desired_speed *= self.__radius
-        if not self.__on_or_in:
-            self.__on_or_in = True
-            return desired_speed - origin_entity.speed
-        else:
-            self.__on_or_in = False
-            return desired_speed + origin_entity.speed * -1
+    def setAngle(vector:Vect2D, angle:float)->Vect2D:
+        length = vector.length
+        vector.x = math.cos(angle) * length
+        vector.y = math.sin(angle) * length
+        return vector
+        
+    def calculate(self, origin_entity: Entity):     
+        
+        circle_center = origin_entity.velocity.clone()
+        circle_center.normalized()
+        circle_center.scale(self.__circle_distance)
+        
+        displacement = Vect2D.from_random_normalized()
+        displacement.scale(self.__radius)
+        
+        self.setAngle(displacement, self.__wander_angle)
+        
+        self.__wander_angle += (math.random() * self.__angle_change) - (self.__angle_change * .5)
+        
+        desired_velocity = circle_center + displacement
+        
+        return Seek().behave(origin_entity, desired_velocity) 
+         
+        # self.__distance = Vect2D.from_random_normalized() - origin_entity.position
+        # desired_speed = origin_entity.position + origin_entity.speed
+        # desired_speed *= self.__distance + Vect2D.from_random_normalized()
+        # desired_speed *= self.__radius
+        # if not self.__on_or_in:
+        #     self.__on_or_in = True
+        #     return desired_speed - origin_entity.speed
+        # else:
+        #     self.__on_or_in = False
+        #     return desired_speed + origin_entity.speed * -1
+        
+    def behave(self, origin_entity: Entity):
+        self.after(10, self.calculate(origin_entity, target_entity))
  
 class Seek(SteeringBehavior):
     def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
@@ -597,6 +623,8 @@ class Piloted():
                     self.steering_force += steering_behavior.behave(origin_entity=self,sim_dim=sim_dim)
                 if isinstance(steering_behavior, Wander) and target_entity is not None:
                     self.steering_force += steering_behavior.behave(local_entity=self)
+                    
+                    
             
         self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
