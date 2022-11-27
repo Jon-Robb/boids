@@ -277,14 +277,14 @@ class Simulation(Updatable):
                             radius=random_radius,
                             position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
                             acceleration=Vect2D(0,0),
-                            max_speed=100,
+                            max_speed=10,
                             #speed=Vect2D(0,0),
                             speed=Vect2D(10,10),
                             max_steering_force=15,
                             slowing_distance=10,
                             steering_force=Vect2D(0,0),
-                            steering_behaviors=[ Wander()]
-        ))
+                            steering_behaviors=[ Wander(), BorderRepulsion(attraction_repulsion_force=1000)]))
+        
         
     def tick(self, time, sim_dim):
         if self.__sprites:
@@ -495,28 +495,28 @@ class Wander(SteeringBehavior):
         self.__on_or_in = False
         self.__wander_angle = random.random() * 2 * math.pi
         
-    def setAngle(vector:Vect2D, angle:float)->Vect2D:
+    def setAngle(self, vector:Vect2D, angle:float)->Vect2D:
         length = vector.length
         vector.x = math.cos(angle) * length
         vector.y = math.sin(angle) * length
         return vector
         
-    def behave(self, origin_entity: Entity, target_entity: Entity):     
+    def behave(self, origin_entity: Entity, target_entity: Entity=None):     
         
-        circle_center = origin_entity.velocity.clone()
+        circle_center = origin_entity.speed.copy()
         circle_center.normalize()
-        circle_center.scale(self.__circle_distance)
+        circle_center *= self.__circle_distance
         
         displacement = Vect2D.from_random_normalized()
-        displacement.scale(self.__radius)
+        displacement *= self.__radius
         
         self.setAngle(displacement, self.__wander_angle)
         
-        self.__wander_angle += (math.random() * self.__angle_change) - (self.__angle_change * .5)
+        self.__wander_angle += (random.random() * self.__angle_change) - (self.__angle_change * .5)
         
-        desired_velocity = circle_center + displacement
+        desired_speed = circle_center + displacement
         
-        return desired_velocity - origin_entity.velocity
+        return desired_speed - origin_entity.speed
         
         
          
@@ -609,7 +609,7 @@ class Piloted():
                     self.steering_force += steering_behavior.behave(self, target_entity)
                 if isinstance(steering_behavior, BorderRepulsion):
                     self.steering_force += steering_behavior.behave(origin_entity=self,sim_dim=sim_dim)
-                if isinstance(steering_behavior, Wander) and target_entity is None:
+                if isinstance(steering_behavior, Wander):
                     self.steering_force += steering_behavior.behave(origin_entity=self)
             
         self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
