@@ -501,10 +501,10 @@ class Wander(SteeringBehavior):
         vector.y = math.sin(angle) * length
         return vector
         
-    def calculate(self, origin_entity: Entity):     
+    def behave(self, origin_entity: Entity, target_entity: Entity):     
         
         circle_center = origin_entity.velocity.clone()
-        circle_center.normalized()
+        circle_center.normalize()
         circle_center.scale(self.__circle_distance)
         
         displacement = Vect2D.from_random_normalized()
@@ -516,7 +516,9 @@ class Wander(SteeringBehavior):
         
         desired_velocity = circle_center + displacement
         
-        return Seek().behave(origin_entity, desired_velocity) 
+        return desired_velocity - origin_entity.velocity
+        
+        
          
         # self.__distance = Vect2D.from_random_normalized() - origin_entity.position
         # desired_speed = origin_entity.position + origin_entity.speed
@@ -528,9 +530,6 @@ class Wander(SteeringBehavior):
         # else:
         #     self.__on_or_in = False
         #     return desired_speed + origin_entity.speed * -1
-        
-    def behave(self, origin_entity: Entity):
-        self.after(10, self.calculate(origin_entity, target_entity))
  
 class Seek(SteeringBehavior):
     def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
@@ -623,8 +622,6 @@ class Piloted():
                     self.steering_force += steering_behavior.behave(origin_entity=self,sim_dim=sim_dim)
                 if isinstance(steering_behavior, Wander) and target_entity is not None:
                     self.steering_force += steering_behavior.behave(local_entity=self)
-                    
-                    
             
         self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
