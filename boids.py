@@ -287,7 +287,7 @@ class Simulation(Updatable):
                         max_steering_force=15,
                         slowing_distance=10,
                         steering_force=Vect2D(0,0),
-                        steering_behaviors=[Wander(), BorderRepulsion(attraction_repulsion_force=50)]))
+                        steering_behaviors=[Wander(), BorderRepulsion(attraction_repulsion_force=10000)]))
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
@@ -308,7 +308,7 @@ class Simulation(Updatable):
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Pursuit(), BorderRepulsion(attraction_repulsion_force=1000)]))
+                                                steering_behaviors=[Pursuit(), BorderRepulsion(attraction_repulsion_force=10000)]))
     
     def tick(self, time, sim_dim):
         if self.__sprites:
@@ -678,10 +678,10 @@ class BorderRepulsion(SteeringBehavior):
         distance_from_top = origin_entity.position.y - origin_entity.height / 2
         distance_from_bottom = sim_dim.y - origin_entity.position.y - origin_entity.height / 2
 
-        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 0.5, 0) if distance_from_left > 0 else Vect2D(force, 0)
-        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 0.5, 0) if distance_from_right > 0 else Vect2D(-force, 0)
-        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 0.5, 2) if distance_from_top > 0 else Vect2D(0, force)
-        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 0.5, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
+        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 2, 0) if distance_from_left > 0 else Vect2D(force, 0)
+        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 2, 0) if distance_from_right > 0 else Vect2D(-force, 0)
+        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 2, 2) if distance_from_top > 0 else Vect2D(0, force)
+        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 2, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
 
 
