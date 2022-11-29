@@ -191,12 +191,6 @@ class Updatable():
     def tick(self):
         pass
 
-# class App(Updatable):
-# def __init__(self):
-    
-#     self.__gui = GUI()
-
-
 
 class App(Tk, Updatable):
     
@@ -213,6 +207,8 @@ class App(Tk, Updatable):
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
+        self.__gui.main_panel.control_panel.start_stop_button.bind('<Button-1>', self.toggle_simulation)
+        self.__gui.main_panel.control_panel.next_button.bind('<Button-1>', self.tick_simulation)
         self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
 
         self.tick()
@@ -226,11 +222,24 @@ class App(Tk, Updatable):
     def size(self):
         return self.__size
 
+    def tick_simulation(self, event=None):
+        self.__simulation.tick(time=0.1, sim_dim=Vect2D(self.__simulation.width, self.__simulation.height))
 
     def tick(self):
-        self.__simulation.tick(time=0.1, sim_dim=Vect2D(self.__simulation.width, self.__simulation.height))
+        if self.__simulation.is_running:
+            self.tick_simulation()
         self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
+        
+    def toggle_simulation(self, event):
+        self.__simulation.toggle_running(event)
+        if self.__simulation.is_running:
+            self.__gui.main_panel.control_panel.start_stop_button.config(text="Stop")
+            self.__gui.main_panel.control_panel.next_button.config(state="disabled")
+        else:
+            self.__gui.main_panel.control_panel.start_stop_button.config(text="Start")
+            self.__gui.main_panel.control_panel.next_button.config(state="normal")
+            
                    
     # APP getters #    
     @property
@@ -260,6 +269,7 @@ class Simulation(Updatable):
         self.__size = size
         self.__sprites = []
         self.__mouse_pos = None
+        self.__is_running = True
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
@@ -316,6 +326,9 @@ class Simulation(Updatable):
 
     def mouse_entered(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
+        
+    def toggle_running(self, event):
+        self.__is_running = not self.__is_running
 
     @property
     def sprites(self):
@@ -336,6 +349,10 @@ class Simulation(Updatable):
     @property
     def height(self):
         return self.__size.y
+    
+    @property
+    def is_running(self):
+        return self.__is_running
 
 class GUI(ttk.Frame, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size:Vect2D=None):
@@ -368,17 +385,27 @@ class ControlBar(ttk.Frame):
     @property
     def param_panel(self):
         return self.__param_panel
+    
+    @property
+    def control_panel(self):
+        return self.__control_panel
 
 
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
         ttk.LabelFrame.__init__(self, root=None, text=text)
-        self.__start_button = ttk.Button(self, text="Start")
-        self.__stop_button = ttk.Button(self, text="Stop")
-        self.__next_button = ttk.Button(self, text="Next Step")
-        self.__start_button.pack()
-        self.__stop_button.pack()
+        self.__start_stop_button = ttk.Button(self, text="Stop")
+        self.__next_button = ttk.Button(self, text="Next Step", state="disabled")
+        self.__start_stop_button.pack()
         self.__next_button.pack()
+        
+    @property
+    def start_stop_button(self):
+        return self.__start_stop_button
+    
+    @property
+    def next_button(self):
+        return self.__next_button
 
 
 class ViewWindow(ttk.Label, Drawable):
