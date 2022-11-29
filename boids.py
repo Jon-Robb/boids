@@ -747,6 +747,8 @@ class DynamicCircle(Circle, Movable, Piloted):
     def draw(self, draw):
         Circle.draw(self, draw)
         draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        draw.line([self.position.x, self.position.y, abs(self.steering_force.x + self.position.x), abs(self.steering_force.y + self.position.y)], fill="green", width=5)
+
         pass
 
     def move(self, time):
