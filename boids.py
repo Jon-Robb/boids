@@ -8,9 +8,17 @@ from PIL import Image, ImageDraw, ImageTk
 from vect2d import Vect2D
 import math
 
-class Clamper():
+class Utils():
     def clamp_max(value, max):
         return min(value, max)
+    
+    def readfile(filename:str)->list:
+        data = []
+        with open(filename, 'r') as file:
+            for line in file:
+                data.append(line)
+        return data
+
 
 class RGBAColor():
     def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255, randomize:bool=False):
@@ -205,10 +213,14 @@ class App(Tk, Updatable):
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
+        self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
 
         self.tick()
                 
         self.mainloop()
+
+    def param_changed(self, event):
+        print("Param changed : " + self.__gui.main_panel.param_panel.param_selected)
 
     @property
     def size(self):
@@ -334,6 +346,9 @@ class GUI(ttk.Frame, Drawable):
         self.__main_panel.grid(row=0, column=0, rowspan=3, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
 
+    @property
+    def main_panel(self):
+        return self.__main_panel
 
     @property
     def view_window(self):
@@ -350,6 +365,9 @@ class ControlBar(ttk.Frame):
         self.__param_panel.grid(row=1, column=0)
         self.__visual_param_panel.grid(row=2, column=0)
 
+    @property
+    def param_panel(self):
+        return self.__param_panel
 
 
 class StartStopPanel(ttk.LabelFrame):
@@ -410,30 +428,29 @@ class ViewWindow(ttk.Label, Drawable):
     def canvas(self, canvas):
         self.__canvas = canvas
 
-def readfile(filename:str)->list:
-    data = []
-    with open(filename, 'r') as file:
-        for line in file:
-            data.append(line)
-    return data
 
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
         self.__param_selected.set("Votre scénario")
-        self.__options_list = readfile("scenarios.txt")
+        self.__options_list = Utils.readfile("scenarios.txt")
         self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
     
         self.__combobox.pack()
 
-        self.__combobox.bind("<<ComboboxSelected>>", self.param_changed)
+        # self.__combobox.bind("<<ComboboxSelected>>", self.param_changed)
 
         # self__test_btn = ttk.Button(self, text="Test")
         # self__test_btn.pack()
         
-    def param_changed(self, event):
-        print("Param changed : " + self.__param_selected.get())
+    @property
+    def param_selected(self):
+        return self.__param_selected.get()
+        
+    @property
+    def combobox(self):
+        return self.__combobox
 
 
 class VisualParamPanel(ttk.LabelFrame):
@@ -508,9 +525,9 @@ class CollisionAvoidance(SteeringBehavior):
 class Wander(SteeringBehavior):
     def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
         super().__init__()
-        """radius while increase the turning distance
-        circle_distance while increase the distance before turning
-        angle_change while increase the turning speed
+        """radius will increase the turning distance
+        circle_distance will increase the distance before turning
+        angle_change will increase the turning rate
         """        
         self.__circle_distance = circle_distance
         self.__radius = radius
@@ -644,7 +661,7 @@ class Piloted():
                 if isinstance(steering_behavior, Wander):
                     self.steering_force += steering_behavior.behave(origin_entity=self)
             
-        self.steering_force.set_polar(length= Clamper.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
+        self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
     
     @property
