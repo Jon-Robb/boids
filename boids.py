@@ -287,7 +287,7 @@ class Simulation(Updatable):
                         max_steering_force=15,
                         slowing_distance=10,
                         steering_force=Vect2D(0,0),
-                        steering_behaviors=[Wander(), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
@@ -580,6 +580,7 @@ class Wander(Seek):
         self.__radius = radius
         self.__is_in = is_in
         self.__circle_center = None
+        self.__target = None
    
    
     def behave(self, origin_entity: Entity, target_entity: Entity=None)->Vect2D:     
@@ -602,13 +603,15 @@ class Wander(Seek):
         else:
             displacement *= self.__radius
             
-        target = self.__circle_center + displacement
+        self.__target = self.__circle_center + displacement
         
-        return super().behave(origin_entity, target)
+        return super().behave(origin_entity, self.__target)
         
         
     def draw(self, draw):
         draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="cyan")
+        draw.ellipse([self.__target.x - 5, self.__target.y - 5, self.__target.x + 5, self.__target.y + 5], fill="cyan")
+        
         
         
     @property
