@@ -410,15 +410,24 @@ class ViewWindow(ttk.Label, Drawable):
     def canvas(self, canvas):
         self.__canvas = canvas
 
+def readfile(filename:str)->list:
+    data = []
+    with open(filename, 'r') as file:
+        for line in file:
+            data.append(line)
+    return data
 
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
-        self.__combo_box = ttk.Combobox(self, values=["Wander", "BorderRepulsion"], textvariable=self.__param_selected)
-        self.__combo_box.pack()
+        self.__param_selected.set("Votre scénario")
+        self.__options_list = readfile("scenarios.txt")
+        self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
+    
+        self.__combobox.pack()
 
-        self.__combo_box.bind("<<ComboboxSelected>>", self.param_changed)
+        self.__combobox.bind("<<ComboboxSelected>>", self.param_changed)
 
         # self__test_btn = ttk.Button(self, text="Test")
         # self__test_btn.pack()
