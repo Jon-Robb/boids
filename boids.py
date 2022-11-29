@@ -528,8 +528,8 @@ class StaticCircle(Circle):
     def __init__(self):
         Circle.init(self)
 
-class SteeringBehavior(Drawable):
-    def __init__(self, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
+class SteeringBehavior():
+    def __init__(self, target_entity:Entity=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
         self.__resulting_direction = None
@@ -539,17 +539,9 @@ class SteeringBehavior(Drawable):
     def behave(self, origin_entity:Entity):
         pass  
     
-    @abstractmethod
-    def draw(self):
-        pass
-
-    
-    
     @property
     def attraction_repulsion_force(self):
         return self.__attraction_repulsion_force
-    
-    
 
     @property
     def target_entity(self):
@@ -613,8 +605,8 @@ class Wander(Seek):
         target = self.__circle_center + displacement
         
         return super().behave(origin_entity, target)
-    
-    
+        
+        
     def draw(self, draw):
         draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="cyan")
         
@@ -778,8 +770,10 @@ class DynamicCircle(Circle, Movable, Piloted):
         draw.line([self.position.x, self.position.y, abs(self.steering_force.x + self.position.x), abs(self.steering_force.y + self.position.y)], fill="green", width=5)
         
         for steering_behavior in self.steering_behaviors:
-            steering_behavior.draw(draw)
+            if isinstance(steering_behavior, Wander):
+                steering_behavior.draw(draw)
 
+        pass
 
     def move(self, time):
         Movable.move(self, time)
