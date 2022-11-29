@@ -270,14 +270,16 @@ class Simulation(Updatable):
         self.__sprites = []
         self.__mouse_pos = None
         self.__is_running = True
+        
+        # random_radius = random.randrange(5,50)
 
         self.sprites.append(DynamicCircle(
                         border_color=RGBAColor(randomize=True),
-                        border_width=random.randrange(0, random_radius),
+                        border_width=random.randrange(0, 100),
                         fill_color=RGBAColor(randomize=True),
                         #position=Vect2D(random.randrange(0,501),200),
                         radius=10,
-                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
+                        position=Vect2D(random.randrange(0 + random.randrange(5,50), int(self.width) - random.randrange(5,50)),random.randrange(0 + random.randrange(5,50), int(self.height) - random.randrange(5,50))),
                         acceleration=Vect2D(0,0),
                         max_speed=100,
                         #speed=Vect2D(0,0),
