@@ -307,7 +307,7 @@ class Simulation(Updatable):
                         max_steering_force=15,
                         slowing_distance=10,
                         steering_force=Vect2D(0,0),
-                        steering_behaviors=[ Wander(), BorderRepulsion(attraction_repulsion_force=1000)]))
+                        steering_behaviors=[ Wander(), BorderRepulsion(attraction_repulsion_force=50)]))
     
     
     def tick(self, time, sim_dim):
@@ -566,14 +566,14 @@ class Seek(SteeringBehavior):
             
   
 class Wander(Seek):
-    def __init__(self, radius:float=100, circle_distance:float=100, on_or_in:bool=False):
+    def __init__(self, radius:float=100, circle_distance:float=100, is_in:bool=False):
         super().__init__()
         """radius will increase the turning distance
         circle_distance will increase the distance before turning
         """        
         self.__circle_distance = circle_distance
         self.__radius = radius
-        self.__on_or_in = on_or_in
+        self.__is_in = is_in
    
    
     def behave(self, origin_entity: Entity, target_entity: Entity=None)->Vect2D:     
@@ -590,7 +590,12 @@ class Wander(Seek):
         circle_center_sprite_relative = origin_entity.speed.normalized * self.__circle_distance
         circle_center = origin_entity.position + circle_center_sprite_relative
         displacement = Vect2D.from_random_normalized()
-        displacement *= self.__radius
+        
+        if self.__is_in:
+            displacement *= random.random() * self.__radius
+        else:
+            displacement *= self.__radius
+            
         target = circle_center + displacement
         
         return super().behave(origin_entity, target)
@@ -740,6 +745,11 @@ class DynamicCircle(Circle, Movable, Piloted):
         Circle.__init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, slowing_distance, steering_force, steering_behaviors)
+        
+    def draw(self, draw):
+        Circle.draw(self, draw)
+        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        pass
 
     def move(self, time):
         Movable.move(self, time)
