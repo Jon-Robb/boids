@@ -770,7 +770,7 @@ class DynamicCircle(Circle, Movable, Piloted):
     def draw(self, draw):
         Circle.draw(self, draw)
         draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
-        draw.line([self.position.x, self.position.y, abs(self.steering_force.x + self.position.x), abs(self.steering_force.y + self.position.y)], fill="green", width=5)
+        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
         
         for steering_behavior in self.steering_behaviors:
             if isinstance(steering_behavior, Wander):
