@@ -223,7 +223,7 @@ class App(Tk, Updatable):
         return self.__size
 
     def tick_simulation(self, event=None):
-        self.__simulation.tick(time=0.1, sim_dim=Vect2D(self.__simulation.width, self.__simulation.height))
+        self.__simulation.tick(time=0.1)
 
     def tick(self):
         if self.__simulation.is_running:
@@ -287,11 +287,11 @@ class Simulation(Updatable):
                         max_steering_force=15,
                         slowing_distance=10,
                         steering_force=Vect2D(0,0),
-                        steering_behaviors=[Wander(), BorderRepulsion(attraction_repulsion_force=10000)]))
+                        steering_behaviors=[Wander(), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
-            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000)), PseudoWander(), Wander()])
+            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000), sim_dim=self.__size), PseudoWander(), Wander()])
 
             self.__sprites.append(DynamicCircle(
                                                 border_color=RGBAColor(randomize=True),
@@ -308,12 +308,12 @@ class Simulation(Updatable):
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Pursuit(), BorderRepulsion(attraction_repulsion_force=10000)]))
+                                                steering_behaviors=[Pursuit(self.sprites[0]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
     
-    def tick(self, time, sim_dim):
+    def tick(self, time):
         if self.__sprites:
             for sprite in self.__sprites:
-                sprite.tick(time, sim_dim, self)
+                sprite.tick(time)
 
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
@@ -529,19 +529,24 @@ class StaticCircle(Circle):
         Circle.init(self)
 
 class SteeringBehavior():
-    def __init__(self, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
+    def __init__(self, target_entity:Entity=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
         self.__resulting_direction = None
+        self.__target_entity = target_entity
 
     @abstractmethod    
-    def behave(self, origin_entity:Entity, target_entity:Entity):
+    def behave(self, origin_entity:Entity):
         pass  
     
     @property
     def attraction_repulsion_force(self):
         return self.__attraction_repulsion_force
 
+    @property
+    def target_entity(self):
+        return self.__target_entity
+    
 class CollisionAvoidance(SteeringBehavior):
     def __init__(self):
         super().__init__(self)
@@ -551,8 +556,8 @@ class CollisionAvoidance(SteeringBehavior):
   
 
 class Seek(SteeringBehavior):
-    def __init__(self, attraction_repulsion_force=1, distance_to_target=None):
-        SteeringBehavior.__init__(self, attraction_repulsion_force, distance_to_target)
+    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=1, distance_to_target=None):
+        SteeringBehavior.__init__(self, target_entity, attraction_repulsion_force, distance_to_target)
       
         
     def behave(self, origin_entity: Entity, target_entity: Entity | Vect2D) -> Vect2D:
@@ -566,7 +571,7 @@ class Seek(SteeringBehavior):
             
   
 class Wander(Seek):
-    def __init__(self, radius:float=100, circle_distance:float=100, is_in:bool=False):
+    def __init__(self, target_entity:Entity=None, radius:float=100, circle_distance:float=100, is_in:bool=False):
         super().__init__()
         """radius will increase the turning distance
         circle_distance will increase the distance before turning
@@ -648,35 +653,36 @@ class PseudoWander(SteeringBehavior):
         
         
 class Flee(Seek):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, target_entity:Entity=None):
+        super().__init__(target_entity)
         
     def behave(self, origin_entity: Entity, target_entity: Vect2D )-> Vect2D:
         return super().behave(origin_entity, target_entity) * -1   
     
 class Pursuit(SteeringBehavior):
-    def __init__(self, ratio:int = 1):
-        super().__init__()
+    def __init__(self, target_entity:Entity=None, ratio:int = 1):
+        super().__init__(target_entity)
         self.__ratio = ratio
         
-    def behave(self, origin_entity: Entity, target_entity: Entity) -> Vect2D:
-        if target_entity is not None:
-            estimated_position = target_entity.position + target_entity.speed  * self.__ratio 
+    def behave(self, origin_entity: Entity) -> Vect2D:
+        if self.target_entity is not None:
+            estimated_position = self.target_entity.position + self.target_entity.speed  * self.__ratio 
             desired_speed = (estimated_position - origin_entity.position).normalized * origin_entity.max_speed
             return desired_speed - origin_entity.speed
         
             
 class BorderRepulsion(SteeringBehavior):
-    def __init__(self, attraction_repulsion_force=1):       
-        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
+    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=1, sim_dim:Vect2D=None):       
+        SteeringBehavior.__init__(self, target_entity, attraction_repulsion_force=attraction_repulsion_force)
+        self.__sim_dim = sim_dim
 
-    def behave(self, origin_entity:Entity, sim_dim):
+    def behave(self, origin_entity:Entity):
         force = self.attraction_repulsion_force
 
         distance_from_left = origin_entity.position.x - origin_entity.width / 2
-        distance_from_right = sim_dim.x - origin_entity.position.x - origin_entity.width / 2
+        distance_from_right = self.__sim_dim.x - origin_entity.position.x - origin_entity.width / 2
         distance_from_top = origin_entity.position.y - origin_entity.height / 2
-        distance_from_bottom = sim_dim.y - origin_entity.position.y - origin_entity.height / 2
+        distance_from_bottom = self.__sim_dim.y - origin_entity.position.y - origin_entity.height / 2
 
         repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 2, 0) if distance_from_left > 0 else Vect2D(force, 0)
         repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 2, 0) if distance_from_right > 0 else Vect2D(-force, 0)
@@ -703,14 +709,9 @@ class Piloted():
         self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
 
-    def steer(self, target_entity:Entity=None, sim_dim = None):
+    def steer(self):
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
-                if (isinstance(steering_behavior, Seek) or isinstance(steering_behavior, Flee) or isinstance(steering_behavior, Pursuit)) and target_entity is not None:
-                    self.steering_force += steering_behavior.behave(self, target_entity)
-                if isinstance(steering_behavior, BorderRepulsion):
-                    self.steering_force += steering_behavior.behave(origin_entity=self,sim_dim=sim_dim)
-                if isinstance(steering_behavior, Wander):
                     self.steering_force += steering_behavior.behave(origin_entity=self)
             
         self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
@@ -759,9 +760,8 @@ class DynamicCircle(Circle, Movable, Piloted):
     def bounce(self, sim_dim):
         Touchable.bounce(self, sim_dim)
 
-    def tick(self, time, sim_dim, simulation):
-        self.steer(target_entity=None, sim_dim=sim_dim)
-        # self.steer(target_entity=simulation.sprites[-1], sim_dim=sim_dim)
+    def tick(self, time):
+        self.steer()
         self.move(time)
         # self.bounce(sim_dim)
     
