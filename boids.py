@@ -1,5 +1,6 @@
 import random
 from abc import abstractmethod
+import tkinter as tk
 # from this import d
 from tkinter import Tk, ttk
 from turtle import position
@@ -250,7 +251,7 @@ class Simulation(Updatable):
 
         for _ in range(nb_circles):
             random_radius = random.randrange(5,50)
-            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000))])
+            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000)), Wander()])
 
             # self.__sprites.append(DynamicCircle(
             #                                     border_color=RGBAColor(randomize=True),
@@ -269,23 +270,24 @@ class Simulation(Updatable):
             #                                     steering_force=Vect2D(0,0),
             #                                     steering_behaviors=[Wander()]))
 
+        
         self.sprites.append(DynamicCircle(
-                            border_color=RGBAColor(randomize=True),
-                            border_width=random.randrange(0, random_radius),
-                            fill_color=RGBAColor(randomize=True),
-                            #position=Vect2D(random.randrange(0,501),200),
-                            radius=random_radius,
-                            position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-                            acceleration=Vect2D(0,0),
-                            max_speed=100,
-                            #speed=Vect2D(0,0),
-                            speed=Vect2D(100,100),
-                            max_steering_force=15,
-                            slowing_distance=10,
-                            steering_force=Vect2D(0,0),
-                            steering_behaviors=[ Wander(), BorderRepulsion(attraction_repulsion_force=1000)]))
-        
-        
+                        border_color=RGBAColor(randomize=True),
+                        border_width=random.randrange(0, random_radius),
+                        fill_color=RGBAColor(randomize=True),
+                        #position=Vect2D(random.randrange(0,501),200),
+                        radius=1,
+                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
+                        acceleration=Vect2D(0,0),
+                        max_speed=100,
+                        #speed=Vect2D(0,0),
+                        speed=Vect2D(100,100),
+                        max_steering_force=15,
+                        slowing_distance=10,
+                        steering_force=Vect2D(0,0),
+                        steering_behaviors=[ Wander(), BorderRepulsion(attraction_repulsion_force=1000)]))
+    
+    
     def tick(self, time, sim_dim):
         if self.__sprites:
             for sprite in self.__sprites:
@@ -412,9 +414,17 @@ class ViewWindow(ttk.Label, Drawable):
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
-        self__test_btn = ttk.Button(self, text="Test")
-        self__test_btn.pack()
+        self.__param_selected = tk.StringVar()
+        self.__combo_box = ttk.Combobox(self, values=["Wander", "BorderRepulsion"], textvariable=self.__param_selected)
+        self.__combo_box.pack()
+
+        self.__combo_box.bind("<<ComboboxSelected>>", self.param_changed)
+
+        # self__test_btn = ttk.Button(self, text="Test")
+        # self__test_btn.pack()
         
+    def param_changed(self, event):
+        print("Param changed : " + self.__param_selected.get())
 
 
 class VisualParamPanel(ttk.LabelFrame):
@@ -489,6 +499,10 @@ class CollisionAvoidance(SteeringBehavior):
 class Wander(SteeringBehavior):
     def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
         super().__init__()
+        """radius while increase the turning distance
+        circle_distance while increase the distance before turning
+        angle_change while increase the turning speed
+        """        
         self.__circle_distance = circle_distance
         self.__radius = radius
         self.__angle_change = angle_change
@@ -501,8 +515,17 @@ class Wander(SteeringBehavior):
         vector.y = math.sin(angle) * length
         return vector
         
-    def behave(self, origin_entity: Entity, target_entity: Entity=None):     
-        
+    def behave(self, origin_entity: Entity, target_entity: Entity=None)->Vect2D:     
+        """Retruns a vector that points in a random direction
+
+        Args:
+            origin_entity (Entity): the sprite that is wandering
+            target_entity (Entity, optional): Must stay None. Defaults to None.
+
+        Returns:
+            Vect2D: displacement vector
+        """        
+         
         circle_center = origin_entity.speed.copy()
         circle_center.normalize()
         circle_center *= self.__circle_distance
