@@ -168,13 +168,14 @@ class App(Tk, Updatable):
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
         self.geometry()
         self.iconbitmap('boids.ico')
-        self.__simulation = Simulation(nb_circles=1, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(nb_circles=2, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
 
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
         self.__gui.main_panel.control_panel.start_stop_button.bind('<Button-1>', self.toggle_simulation)
         self.__gui.main_panel.control_panel.next_button.bind('<Button-1>', self.tick_simulation)
+        self.__gui.main_panel.control_panel.reset_button.bind('<Button-1>', self.reset_simulation)
         self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
 
         self.tick()
@@ -190,6 +191,9 @@ class App(Tk, Updatable):
 
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
+        
+    def reset_simulation(self, event=None):
+        self.__simulation.reset()
 
     def tick(self):
         if self.__simulation.is_running:
@@ -236,28 +240,32 @@ class Simulation(Updatable):
         self.__sprites = []
         self.__mouse_pos = None
         self.__is_running = True
+        self.__nb_circles = nb_circles
+        
+        self.create_circles()
         
         # random_radius = random.randrange(5,50)
+    
+    def create_circles(self):
+        # self.sprites.append(DynamicCircle(
+        #                 border_color=RGBAColor(randomize=True),
+        #                 border_width=random.randrange(0, 100),
+        #                 fill_color=RGBAColor(randomize=True),
+        #                 #position=Vect2D(random.randrange(0,501),200),
+        #                 radius=10,
+        #                 position=Vect2D(random.randrange(0 + random.randrange(5,50), int(self.width) - random.randrange(5,50)),random.randrange(0 + random.randrange(5,50), int(self.height) - random.randrange(5,50))),
+        #                 acceleration=Vect2D(0,0),
+        #                 max_speed=100,
+        #                 #speed=Vect2D(0,0),
+        #                 speed=Vect2D(100,100),
+        #                 max_steering_force=15,
+        #                 slowing_distance=10,
+        #                 steering_force=Vect2D(0,0),
+        #                 steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
 
-        self.sprites.append(DynamicCircle(
-                        border_color=RGBAColor(randomize=True),
-                        border_width=random.randrange(0, 100),
-                        fill_color=RGBAColor(randomize=True),
-                        #position=Vect2D(random.randrange(0,501),200),
-                        radius=10,
-                        position=Vect2D(random.randrange(0 + random.randrange(5,50), int(self.width) - random.randrange(5,50)),random.randrange(0 + random.randrange(5,50), int(self.height) - random.randrange(5,50))),
-                        acceleration=Vect2D(0,0),
-                        max_speed=100,
-                        #speed=Vect2D(0,0),
-                        speed=Vect2D(100,100),
-                        max_steering_force=15,
-                        slowing_distance=10,
-                        steering_force=Vect2D(0,0),
-                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
-
-        for _ in range(nb_circles):
-            random_radius = random.randrange(5,50)
-            random_steering_behavior = random.choice([Seek(), Flee(), Pursuit(), Evade(), BorderRepulsion(attraction_repulsion_force=random.randrange(10,1000), sim_dim=self.__size), PseudoWander(), Wander()])
+        for _ in range(self.__nb_circles):
+            random_radius = random.randrange(15,100)
+            random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
             self.__sprites.append(DynamicCircle(
                                                 border_color=RGBAColor(randomize=True),
@@ -274,12 +282,16 @@ class Simulation(Updatable):
                                                 max_steering_force=5,
                                                 slowing_distance=10,
                                                 steering_force=Vect2D(0,0),
-                                                steering_behaviors=[Pursuit(self.sprites[0]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+                                                steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)] if len(self.__sprites) == 0 else [Pursuit(self.sprites[0]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
     
     def tick(self, time):
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
+                
+    def reset(self):
+        self.__sprites = []
+        self.create_circles()
 
     def move_mouse(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
@@ -362,8 +374,10 @@ class StartStopPanel(ttk.LabelFrame):
         ttk.LabelFrame.__init__(self, root=None, text=text)
         self.__start_stop_button = ttk.Button(self, text="Stop")
         self.__next_button = ttk.Button(self, text="Next Step", state="disabled")
+        self.__reset_button = ttk.Button(self, text="Reset")
         self.__start_stop_button.pack()
         self.__next_button.pack()
+        self.__reset_button.pack()
         
     @property
     def start_stop_button(self):
@@ -372,6 +386,10 @@ class StartStopPanel(ttk.LabelFrame):
     @property
     def next_button(self):
         return self.__next_button
+    
+    @property
+    def reset_button(self):
+        return self.__reset_button
 
 
 class ViewWindow(ttk.Label, Drawable):
