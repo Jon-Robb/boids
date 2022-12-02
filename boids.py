@@ -197,7 +197,9 @@ class App(Tk, Updatable):
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
         
-    def reset_simulation(self, event=None, key:str="Default") -> None:
+    # def reset_simulation(self, event=None, key:str="Default") -> None:
+    def reset_simulation(self, event=None, key:str="Seek Mouse") -> None:
+
         self.__simulation.reset(key)
 
     def tick(self):
@@ -243,21 +245,21 @@ class Simulation(Updatable):
 
         self.__size = size
         self.__sprites = []
-        self.__mouse_pos = None
+        self.__mouse_pos = Vect2D(-1, -1)
         self.__is_running = True
         
         self.create_circles()
         
         # random_radius = random.randrange(5,50)
     
-    def create_circles(self, key:str="Default"):    
+    def create_circles(self, key:str="Seek Mouse"):    
         key = key.replace("\n", "")
         
         print(key)
         
         match key:
-            case 'Mouse seek':
-                for _ in range(2):
+            case 'Seek Mouse':
+                for _ in range(1):
                     random_radius = random.randrange(15,75)
                     random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
@@ -333,14 +335,13 @@ class Simulation(Updatable):
         self.__mouse_pos = Vect2D(event.x, event.y)
         
     def mouse_left(self, event):
-        self.__mouse_pos = None
+        self.__mouse_pos = Vect2D(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
-        print("Mouse entered")
         
     def toggle_running(self, event):
         self.__is_running = not self.__is_running
@@ -522,7 +523,7 @@ class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
-        self.__param_selected.set("Default")
+        self.__param_selected.set("Seek Mouse")
         self.__options_list = Utils.readfile("scenarios.txt")
         self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
     
@@ -646,10 +647,14 @@ class Seek(SteeringBehavior):
             if isinstance(self.target_entity, Entity):
                 desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
-            else:
+            elif self.target_entity is not Vect2D(-1.0, -1.0):
                 print(self.target_entity)
                 desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
+            else: 
+                print(self.target_entity)
+                print("Not interested")
+                return Vect2D(0, 0)
         else:
             return Vect2D(0,0)
             
@@ -664,7 +669,6 @@ class Wander(Seek):
         self.__radius = radius
         self.__is_in = is_in
         self.__circle_center = None
-        self.__target = None
    
    
     def behave(self, origin_entity: Entity)->Vect2D:     
