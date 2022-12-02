@@ -250,7 +250,7 @@ class Simulation(Updatable):
         self.__is_running = True
         self.__nb_circles = nb_circles
         
-        self.create_circles()
+        # self.create_circles()
         
         # random_radius = random.randrange(5,50)
 
