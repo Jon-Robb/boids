@@ -253,12 +253,33 @@ class Simulation(Updatable):
         
         # random_radius = random.randrange(5,50)
     
-    def create_circles(self, key:str="Seek Mouse"):    
+    def create_circles(self, key:str="Default"):    
         key = key.replace("\n", "")
         
         print(key)
         
         match key:
+            case 'Seek or Flee':
+                for i in range(25):
+                    random_radius = random.randrange(5,50)
+                    random_steering_behavior = random.choice([Seek(target_entity=self.sprites(random.randint(0, len(self.sprites)-1))), Flee(target_entity=self.sprites(random.randint(0, len(self.sprites)-1)))])
+
+                    self.__sprites.append(DynamicCircle(
+                                                        border_color=RGBAColor(randomize=True),
+                                                        # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
+                                                        border_width=random.randrange(0, random_radius),
+                                                        # fill_color=RGBAColor(randomize=True),
+                                                        fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
+                                                        radius=random_radius,
+                                                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
+                                                        acceleration=Vect2D(0,0),
+                                                        max_speed=100,
+                                                        #speed=Vect2D(0,0),
+                                                        speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+                                                        max_steering_force=5,
+                                                        slowing_distance=10,
+                                                        steering_force=Vect2D(0,0),
+                                                        steering_behaviors=[BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size), random_steering_behavior]))
             case 'Seek Mouse':
                 for _ in range(1):
                     random_radius = random.randrange(15,75)
@@ -280,8 +301,8 @@ class Simulation(Updatable):
                                                         steering_force=Vect2D(0,0),
                                                         steering_behaviors=[Seek(self.__mouse_pos), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
             case 'Follow the leader':
-                for i in range(50):
-                    random_radius = random.randrange(15,75)
+                for i in range(1000):
+                    random_radius = random.randrange(1,2)
                     random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
                     self.__sprites.append(DynamicCircle(border_color=RGBAColor(randomize=True),
@@ -326,24 +347,23 @@ class Simulation(Updatable):
             for sprite in self.__sprites:
                 sprite.tick(time)
 
-    def reset(self, key:str="Default") -> None:
+    def reset(self, key:str="Default"):
         self.__is_running = True
         
         self.__sprites = []
         self.create_circles(key)
 
     def move_mouse(self, event):
-        self.__mouse_pos = Vect2D(event.x, event.y)
+        self.__mouse_pos.set(event.x, event.y)
         
     def mouse_left(self, event):
-        self.__mouse_pos = Vect2D(-1, -1)
+        self.__mouse_pos.set(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
-        self.__mouse_pos = Vect2D(event.x, event.y)
-        print("Mouse entered")
+        self.__mouse_pos.set(event.x, event.y)
         
     def toggle_running(self, event):
         self.__is_running = not self.__is_running
@@ -566,7 +586,7 @@ class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
-        self.__param_selected.set("Seek Mouse")
+        self.__param_selected.set("Default")
         self.__options_list = Utils.readfile("scenarios.txt")
         self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
     
@@ -697,16 +717,15 @@ class Seek(SteeringBehavior):
             if isinstance(self.target_entity, Entity):
                 desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
-            else:
-                print(self.target_entity)
+            elif self.target_entity.x != -1 and self.target_entity.y != -1:
+                print("target="+str(self.target_entity))
                 desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
-            # else: 
-            #     print(self.target_entity)
-            #     print("Not interested")
-            #     return Vect2D(0, 0)
-            # else:
-            #     return Vect2D(0,0)
+            else: 
+                print("target="+str(self.target_entity))
+                return Vect2D(0, 0)
+        else:
+            return Vect2D(0,0)
             
   
 class Wander(Seek):
