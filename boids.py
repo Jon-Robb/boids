@@ -733,7 +733,8 @@ class DynamicCircle(Circle, Movable, Piloted):
         draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
         
         for steering_behavior in self.steering_behaviors:
-            if isinstance(steering_behavior, Wander):
+            # if isinstance(steering_behavior, Wander):
+            if hasattr(steering_behavior, "draw"):
                 steering_behavior.draw(draw)
 
         pass
