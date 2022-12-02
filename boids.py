@@ -301,7 +301,7 @@ class Simulation(Updatable):
                                                         steering_force=Vect2D(0,0),
                                                         steering_behaviors=[Seek(self.__mouse_pos), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
             case 'Follow the leader':
-                for i in range(1000):
+                for i in range(100):
                     random_radius = random.randrange(1,2)
                     random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
