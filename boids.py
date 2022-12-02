@@ -169,7 +169,12 @@ class App(Tk, Updatable):
         self.geometry()
         self.iconbitmap('boids.ico')
         self.__simulation = Simulation(nb_circles=2, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
-
+        
+        self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
+        self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
+        self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
+        
+        
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
@@ -184,6 +189,9 @@ class App(Tk, Updatable):
 
     def param_changed(self, event):
         print("Param changed : " + self.__gui.main_panel.param_panel.param_selected)
+        
+    def print(self, event):
+        print("Print")
 
     @property
     def size(self):
@@ -245,23 +253,22 @@ class Simulation(Updatable):
         self.create_circles()
         
         # random_radius = random.randrange(5,50)
-    
-    def create_circles(self):
-        # self.sprites.append(DynamicCircle(
-        #                 border_color=RGBAColor(randomize=True),
-        #                 border_width=random.randrange(0, 100),
-        #                 fill_color=RGBAColor(randomize=True),
-        #                 #position=Vect2D(random.randrange(0,501),200),
-        #                 radius=10,
-        #                 position=Vect2D(random.randrange(0 + random.randrange(5,50), int(self.width) - random.randrange(5,50)),random.randrange(0 + random.randrange(5,50), int(self.height) - random.randrange(5,50))),
-        #                 acceleration=Vect2D(0,0),
-        #                 max_speed=100,
-        #                 #speed=Vect2D(0,0),
-        #                 speed=Vect2D(100,100),
-        #                 max_steering_force=15,
-        #                 slowing_distance=10,
-        #                 steering_force=Vect2D(0,0),
-        #                 steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+
+        self.sprites.append(DynamicCircle(
+                        border_color=RGBAColor(randomize=True),
+                        border_width=random.randrange(0, 100),
+                        fill_color=RGBAColor(randomize=True),
+                        #position=Vect2D(random.randrange(0,501),200),
+                        radius=10,
+                        position=Vect2D(random.randrange(0 + random.randrange(5,50), int(self.width) - random.randrange(5,50)),random.randrange(0 + random.randrange(5,50), int(self.height) - random.randrange(5,50))),
+                        acceleration=Vect2D(0,0),
+                        max_speed=100,
+                        #speed=Vect2D(0,0),
+                        speed=Vect2D(100,100),
+                        max_steering_force=15,
+                        slowing_distance=10,
+                        steering_force=Vect2D(0,0),
+                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
 
         for _ in range(self.__nb_circles):
             random_radius = random.randrange(15,100)
@@ -367,6 +374,10 @@ class ControlBar(ttk.Frame):
     @property
     def control_panel(self):
         return self.__control_panel
+    
+    @property
+    def visual_param_panel(self):
+        return self.__visual_param_panel
 
 
 class StartStopPanel(ttk.LabelFrame):
@@ -404,6 +415,9 @@ class ViewWindow(ttk.Label, Drawable):
         # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
         self.__image_label.grid(row=0, column=0, sticky='ns')
         self.__image_label.columnconfigure(0, minsize=600, weight=1)
+        self.__speed_is_drawn = False
+        self.__steering_force_is_drawn = False
+        self.__circle_is_drawn = True
 
 
     def update_view(self, simulation):
@@ -412,7 +426,13 @@ class ViewWindow(ttk.Label, Drawable):
             draw = ImageDraw.Draw(i)
 
             for sprite in simulation.sprites:
-                sprite.draw(draw)
+                if self.__circle_is_drawn:
+                    sprite.draw(draw)            
+                if self.__speed_is_drawn:
+                    sprite.draw_circle_speed(draw)
+                if self.__steering_force_is_drawn:
+                    sprite.draw_circle_steering_force(draw)
+               
         
             self.__image_tk = ImageTk.PhotoImage(i)
             self.__image_label["image"] = self.__image_tk
@@ -421,7 +441,15 @@ class ViewWindow(ttk.Label, Drawable):
             # self.__gui.view_window.image_label["image"] = self.tki
 
             # self.after(10, self.tick)  
+            
+    def toggle_draw_circle(self, event):
+        self.__circle_is_drawn = not self.__circle_is_drawn
+            
+    def toggle_draw_steering_force(self, event):
+        self.__steering_force_is_drawn = not self.__steering_force_is_drawn
 
+    def toggle_draw_speed(self, event):
+        self.__speed_is_drawn = not self.__speed_is_drawn
 
     @property
     def canvas(self):
@@ -465,11 +493,31 @@ class ParamPanel(ttk.LabelFrame):
 
 
 class VisualParamPanel(ttk.LabelFrame):
-     def __init__(self, title):
+    def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
-        self__test_btn = ttk.Button(self, text="Test")
-        self__test_btn.pack()
+        self.__speed_var = tk.IntVar()
+        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0)
+        self.__speed_checkbutton.pack()
+        self.__steering_force_var = tk.IntVar()
+        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steering Force", variable=self.__steering_force_var, onvalue=1, offvalue=0)
+        self.__steering_force_checkbutton.pack()
+        self.__show_circle_var = tk.IntVar()
+        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Hide Circle", variable=self.__show_circle_var, onvalue=1, offvalue=0)
+        self.__show_circle_checkbutton.pack()
 
+
+    @property
+    def show_circle_checkbutton(self):
+        return self.__show_circle_checkbutton
+
+    @property
+    def steering_force_checkbutton(self):
+        return self.__steering_force_checkbutton
+    
+    @property
+    def speed_checkbutton(self):
+        return self.__speed_checkbutton
+    
 class SimParamPanel(ParamPanel):
     def __init__(self):
         pass    
@@ -747,15 +795,22 @@ class DynamicCircle(Circle, Movable, Piloted):
         
     def draw(self, draw):
         Circle.draw(self, draw)
-        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
-        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
+        # draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
         
-        for steering_behavior in self.steering_behaviors:
-            # if isinstance(steering_behavior, Wander):
-            if hasattr(steering_behavior, "draw"):
-                steering_behavior.draw(draw)
+        # for steering_behavior in self.steering_behaviors:
+        #     # if isinstance(steering_behavior, Wander):
+        #     if hasattr(steering_behavior, "draw"):
+        #         steering_behavior.draw(draw)
 
-        pass
+    def draw_circle_speed(self, draw):
+        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        
+    def draw_circle_steering_force(self, draw):
+        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
+        for steering_behavior in self.steering_behaviors:
+            if hasattr(steering_behavior, "draw"):
+                    steering_behavior.draw(draw)
 
     def move(self, time):
         Movable.move(self, time)
