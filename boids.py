@@ -168,7 +168,7 @@ class App(Tk, Updatable):
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
         self.geometry()
         self.iconbitmap('boids.ico')
-        self.__simulation = Simulation(nb_circles=2, size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
+        self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
         
         self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
         self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
@@ -239,13 +239,12 @@ class Entity(Drawable, Updatable):
         pass
      
 class Simulation(Updatable):
-    def __init__(self, nb_circles:int=2, size=Vect2D(100,100)):
+    def __init__(self, size=Vect2D(100,100)):
 
         self.__size = size
         self.__sprites = []
         self.__mouse_pos = None
         self.__is_running = True
-        self.__nb_circles = nb_circles
         
         self.create_circles()
         
@@ -258,7 +257,7 @@ class Simulation(Updatable):
         
         match key:
             case 'Mouse seek':
-                for _ in range(20):
+                for _ in range(2):
                     random_radius = random.randrange(15,75)
                     random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
@@ -276,9 +275,9 @@ class Simulation(Updatable):
                                                         max_steering_force=5,
                                                         slowing_distance=10,
                                                         steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[Seek(self.__mouse_pos)]))
+                                                        steering_behaviors=[Seek(self.__mouse_pos), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
             case 'Follow the leader':
-                for _ in range(self.__nb_circles):
+                for i in range(50):
                     random_radius = random.randrange(15,75)
                     random_steering_behavior = random.choice([PseudoWander(), Wander()])
 
@@ -296,7 +295,8 @@ class Simulation(Updatable):
                                                         max_steering_force=5,
                                                         slowing_distance=10,
                                                         steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)] if len(self.__sprites) == 0 else [Pursuit(self.sprites[0]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+                                                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), 
+                                                                            BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)] if len(self.__sprites) == 0 else [Pursuit(self.sprites[i-1]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
             case _:
                 for _ in range(2):
                     random_radius = random.randrange(15,75)
@@ -340,6 +340,7 @@ class Simulation(Updatable):
 
     def mouse_entered(self, event):
         self.__mouse_pos = Vect2D(event.x, event.y)
+        print("Mouse entered")
         
     def toggle_running(self, event):
         self.__is_running = not self.__is_running
@@ -646,8 +647,11 @@ class Seek(SteeringBehavior):
                 desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
             else:
+                print(self.target_entity)
                 desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
                 return desired_speed - origin_entity.speed
+        else:
+            return Vect2D(0,0)
             
   
 class Wander(Seek):
