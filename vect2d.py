@@ -5,7 +5,6 @@ from random import uniform
 
 
 
-
 class Vect2D:
     """La classe Vect2D encapsule les notions d'un vecteur mathématique.
     
@@ -36,16 +35,19 @@ class Vect2D:
      
     Il existe plusieurs façons de **créer** un `Vect2D` :
 
-    - `Vect2D`
+    - `Vect2D()`
     - `Vect2D.from_vect2d`
     - `Vect2D.from_polar`
+    - `Vect2D.from_polar_degrees`
     - `Vect2D.from_random_normalized`
     - `Vect2D.from_random_cartesian`
     - `Vect2D.from_random_polar`
+    - `Vect2D.from_random_polar_degrees`
+    - `Vect2D.from_data`
      
     Les **propriétés** (accesseurs et mutateurs) sont :
     
-    - `Vect2D.is_defined` [lecture] : retourne faux si le vecteur est indéfini
+    - `Vect2D.is_defined` [lecture] : retourne vrai si le vecteur est défini
     - `Vect2D.is_normalized` [lecture] : retourne vrai si le vecteur est de longueur 1
     - `Vect2D.x` [lecture/écriture] : l'abscisse de la coordonnée cartésienne
     - `Vect2D.y` [lecture/écriture] : l'ordonnée de la coordonnée cartésienne
@@ -53,8 +55,15 @@ class Vect2D:
     - `Vect2D.length_squared` [lecture/écriture] : la longueur au carré de la coordonnée polaire
     - `Vect2D.orientation` [lecture/écriture] : l'orientation de la coordonnée polaire en radians
     - `Vect2D.orientation_degrees` [lecture/écriture] : l'orientation de la coordonnée polaire en degrées
+    - `Vect2D.normalized` [lecture] : retourne vrai si le vecteur est unitaire
     - `Vect2D.right_perpendicular` [lecture] : retourne le vecteur perpendiculaire de droite
     - `Vect2D.left_perpendicular` [lecture] : retourne le vecteur perpendiculaire de gauche
+    - `Vect2D.flipped` [lecture] : retourne le vecteur permuté
+    - `Vect2D.manhattan_length` [lecture] : retourne la distance de Mannhatan
+    - `Vect2D.chebyshev_length` [lecture] : retourne la distance de Chebyshev
+    - `Vect2D.as_tuple` [lecture] : retourne un tuple de deux réels 
+    - `Vect2D.as_list` [lecture] : retourne une liste de deux réels 
+    - `Vect2D.as_dict` [lecture] : retourne un dictionnaire de deux réels avec 'x' et 'y' comme clés 
      
     Pour le système de coordonnées **cartésiennes** :
     
@@ -165,7 +174,44 @@ class Vect2D:
         - `complex(v)`
             - ne modifie pas l'instance passée
             - retourne un nombre complexe représentant le vecteur
+            
+    **Conversion** vers un type externe et utilitaires :
+    
+    - Conversion : 
+        - `bool(v)` :
+            - retourne un booléen vrai si le vecteur est défini
+        - `repr(v)` :
+            - retourne une chaîne de caractères technique
+        - `str(v)` :
+            - retourne une chaîne de caractères descriptive
+            - les fonctions suivantes permettent de paramétriser la conversion
+                - `Vect2D.set_string_format`
+                - `Vect2D.set_value_format`
+        - `Vect2D.as_tuple` :
+            - retourne un tuple de deux réels 
+        - `Vect2D.as_list` :
+            - retourne une liste de deux réels 
+        - `Vect2D.as_dict` :
+            - retourne un dictionnaire de deux réels 
 
+    Le vecteur est aussi un **itérateur** : 
+
+    - l'itérateur pointe vers l'instance originale et reste une _vue_ de ce 
+      vecteur
+            
+    Exemples de l'itérateur :
+    
+        >>> v1 = Vect2D(1.0, -2.5)
+        >>> for coord in v1:
+        ...     print(coord)
+        1.0
+        -2.5
+        >>> i = iter(v1)
+        >>> print(next(i))
+        1.0
+        >>> v1.y = 100.0
+        >>> print(next(i))
+        100.0
     """
     
     
@@ -328,6 +374,34 @@ class Vect2D:
         """
         return f'{Vect2D.__string_prefix}{self.x:{Vect2D.__string_value_format}}{Vect2D.__string_separator}{self.y:{Vect2D.__string_value_format}}{Vect2D.__string_suffix}'
 
+    class __Vect2D_Iter:
+        def __init__(self, vect2d : 'Vect2D'):
+            self.__vect2d = vect2d
+            self.__i = 0
+            
+        def __next__(self):
+            if self.__i == 0:
+                self.__i += 1
+                return self.__vect2d.x
+            if self.__i == 1:
+                self.__i += 1
+                return self.__vect2d.y
+            else:
+                raise StopIteration
+            
+
+    def __iter__(self):
+        """
+        >>> v1 = Vect2D(2.0, -1.5)
+        >>> tu = tuple(v1)
+        >>> li = list(v1)
+        >>> print(tu)
+        (2.0, -1.5)
+        >>> print(li)
+        [2.0, -1.5]
+        """
+        return Vect2D.__Vect2D_Iter(self)
+    
 
     #--------------------------------------
     #     ____                           _ 
@@ -362,10 +436,10 @@ class Vect2D:
 
         Exemples:
             >>> v1 = Vect2D(2.0, 0.0)
-            >>> print(v1.is_defined)
+            >>> v1.is_defined
             True
             >>> v1.reset()
-            >>> print(v1.is_defined)
+            >>> v1.is_defined
             False
         """
         return not(isclose(self.x, 0.) and isclose(self.y, 0.))
@@ -503,13 +577,13 @@ class Vect2D:
 
         Exemples:
             >>> v1 = Vect2D(2.0, 5.0)
-            >>> print(v1.manhattan_length)
+            >>> v1.manhattan_length
             7.0
         """     
         return abs(self.x) + abs(self.y)
     
     @property
-    def chebyshev_distance(self) -> float:
+    def chebyshev_length(self) -> float:
         """`Read only`
         
         Retourne la distance de Chebyshev.
@@ -519,7 +593,7 @@ class Vect2D:
         
         Exemples:
             >>> v1 = Vect2D(2.0, 5.0)
-            >>> print(v1.chebyshev_distance)
+            >>> v1.chebyshev_length
             5.0
         """     
         return max(abs(self.x), abs(self.y))
@@ -533,7 +607,7 @@ class Vect2D:
 
         Exemples:
             >>> v1 = Vect2D(2.0, 1.0)
-            >>> print(v1.minkowski_length(1))
+            >>> v1.minkowski_length(1)
             3.0
         """               
         return (abs(self.x) ** order + abs(self.y) ** order) ** (1. / order)
@@ -616,6 +690,10 @@ class Vect2D:
         système de coordonnées cartésiennes.
         
         L'orientation est en radians.
+        
+        Args:
+            length (float): La longueur de la coordonnée polaire. 
+            orientation (float): L'orientation' de la coordonnée polaire. 
 
         Exemples:
             >>> from math import pi
@@ -624,6 +702,28 @@ class Vect2D:
             (0.00E+00, 5.00E+00)
         """
         return cls(cos(orientation) * length, sin(orientation) * length)
+
+
+    @classmethod
+    def from_polar_degrees(cls, length : float, orientation : float) -> 'Vect2D':
+        """Retourne un vecteur issu de la représentation polaire passée en 
+        argument. 
+        
+        La représentation finale du vecteur est toujours selon un 
+        système de coordonnées cartésiennes.
+        
+        L'orientation est en degrées.
+        
+        Args:
+            length (float): La longueur de la coordonnée polaire. 
+            orientation (float): L'orientation' de la coordonnée polaire. 
+
+        Exemples:
+            >>> v1 = round(Vect2D.from_polar_degrees(5.0, 90.))
+            >>> print(v1)
+            (0.00E+00, 5.00E+00)
+        """
+        return cls.from_polar(length, radians(orientation))
     
     def set_polar(self, length : float, orientation : float) -> None:
         """Détermine le vecteur courant par la représentation polaire passée en 
@@ -633,6 +733,10 @@ class Vect2D:
         système de coordonnées cartésiennes.
         
         L'orientation est en radians.
+        
+        Args:
+            length (float): La longueur de la coordonnée polaire. 
+            orientation (float): L'orientation' de la coordonnée polaire. 
 
         Exemples:
             >>> from math import pi
@@ -657,7 +761,7 @@ class Vect2D:
         
         Exemples:
             >>> v1 = Vect2D(1.0, 2.0)
-            >>> print(v1.length_squared)
+            >>> v1.length_squared
             5.0
         """
         return self.x ** 2. + self.y ** 2.
@@ -677,7 +781,7 @@ class Vect2D:
         
         Exemples:
             >>> v1 = Vect2D(1.0, 1.0)
-            >>> print(v1.length)
+            >>> v1.length
             1.4142135623730951
         """
         return sqrt(self.length_squared)
@@ -697,7 +801,7 @@ class Vect2D:
         
         Exemples:
             >>> v1 = Vect2D(1.0, 1.0)
-            >>> print(v1.orientation)
+            >>> v1.orientation
             0.7853981633974483
         """        
         return atan2(self.y, self.x)
@@ -717,7 +821,7 @@ class Vect2D:
                 
         Exemples:
             >>> v1 = Vect2D(1.0, 1.0)
-            >>> print(v1.orientation_degrees)
+            >>> v1.orientation_degrees
             45.0
         """
         return degrees(atan2(self.y, self.x))
@@ -727,17 +831,77 @@ class Vect2D:
         self.set_polar(self.length, radians(value))
 
     def limit_length_squared(self, max_length_squared : float) -> None:
-        # max_length_squared >= 0
+        """Limite la longueur au carré du vecteur. 
+        
+        Si la longueur au carré est plus petite que la limite, le vecteur 
+        reste inchangé. Si la longueur au carré est plus grande, le vecteur 
+        est limité à la longueur au carré maximum indiquée. 
+        
+        Args:
+            max_length_squared (float): La longueur au carré maximum que le 
+            vecteur peut avoir. Cette longueur doit être strictement positive.
+            (max_length_squared > 0.0)
+
+        Exemples:
+            >>> v1 = Vect2D(5.0, 0.0)
+            >>> v1.limit_length_squared(9.0)
+            >>> print(v1)
+            (3.00E+00, 0.00E+00)
+            >>> v1.limit_length_squared(25.0)
+            >>> print(v1)
+            (3.00E+00, 0.00E+00)
+        """
         if self.length_squared > max_length_squared:
             self.length_squared = max_length_squared
 
     def limit_length(self, max_length : float) -> None:
-        # max_length >= 0
+        """Limite la longueur du vecteur. 
+        
+        Si la longueur est plus petite que la limite, le vecteur reste 
+        inchangé. Si la longueur est plus grande, le vecteur est limité 
+        à la longueur maximum indiquée. 
+        
+        Args:
+            max_length (float): La longueur maximum que le vecteur peut 
+            avoir. Cette longueur doit être strictement positive.
+            (max_length_squared > 0.0)
+
+        Exemples:
+            >>> v1 = Vect2D(0.0, 5.0)
+            >>> v1.limit_length(3.0)
+            >>> print(round(v1))
+            (0.00E+00, 3.00E+00)
+            >>> v1.limit_length(5.0)
+            >>> print(round(v1))
+            (0.00E+00, 3.00E+00)
+        """
         if self.length_squared > max_length * max_length:
             self.length = max_length
 
     def clamp_length_squared(self, min_length_squared : float, max_length_squared : float) -> None:
-        # min_length_squared & max_length_squared >= 0
+        """Borne la longueur au carré du vecteur. 
+        
+        La longueur au carré est bornée aux limites inférieures et supérieures.
+        
+        0 < min_length_squared < max_length_squared
+        
+        Args:
+            min_length_squared (float): La longueur au carré minimum que le 
+                vecteur peut avoir. Cette longueur doit être strictement 
+                positive et inférieure à la longueur au carré maximum. 
+            max_length_squared (float): La longueur au carré maximum que le 
+                vecteur peut avoir. Cette longueur doit être strictement 
+                positive et supérieure à la longueur au carré minimum. 
+
+        Exemples:
+            >>> v1 = Vect2D(5.0, 0.0)
+            >>> v1.clamp_length_squared(9.0, 16.0)
+            >>> print(v1)
+            (4.00E+00, 0.00E+00)
+            >>> v1.clamp_length_squared(9.0, 25.0)
+            >>> print(v1)
+            (4.00E+00, 0.00E+00)
+        """
         length_squared = self.length_squared
         if length_squared < min_length_squared:
             self.length_squared = min_length_squared
@@ -745,16 +909,38 @@ class Vect2D:
             self.length_squared = max_length_squared
 
     def clamp_length(self, min_length : float, max_length : float) -> None:
-        # min_length & max_length >= 0
-        length = self.length_squared
-        if length < min_length:
-            self.length_squared = min_length
-        elif length > max_length:
-            self.length_squared = max_length
+        """Borne la longueur du vecteur. 
+        
+        La longueur est bornée aux limites inférieures et supérieures.
+        
+        0 < min_length < max_length
 
+        Args:
+            min_length (float): La longueur minimum que le vecteur peut 
+                avoir. Cette longueur doit être strictement positive et 
+                inférieure à la longueur maximum. 
+            max_length (float): La longueur maximum que le vecteur peut 
+                avoir. Cette longueur doit être strictement positive et 
+                supérieure à la longueur minimum. 
+
+        Exemples:
+            >>> v1 = Vect2D(5.0, 0.0)
+            >>> v1.clamp_length(3.0, 4.0)
+            >>> print(v1)
+            (4.00E+00, 0.00E+00)
+            >>> v1.clamp_length(3.0, 5.0)
+            >>> print(v1)
+            (4.00E+00, 0.00E+00)
+        """
+        length_sqared = self.length_squared
+        if length_sqared < min_length * min_length:
+            self.length = min_length
+        elif length_sqared > max_length * max_length:
+            self.length = max_length
+
+    # to do
     # def clamp_orientation(self, orientation_from : float, orientation_to : float) -> None:
     #     # orientation = self.orientation
-    #     # to do
     #     ...
 
 
@@ -779,9 +965,9 @@ class Vect2D:
         Exemples:
             >>> v1 = Vect2D()
             >>> v2 = Vect2D(1.0, 0.0)
-            >>> print(v1.is_normalized)
+            >>> v1.is_normalized
             False
-            >>> print(v2.is_normalized)
+            >>> v2.is_normalized
             True
         """
         return isclose(self.length_squared, 1.0)    
@@ -792,30 +978,30 @@ class Vect2D:
         
         Retourne une nouvelle instance de 'Vect2D' correspondant au vecteur  
         unitaire du vecteur courant.
+        
+        Le vecteur doit être défini.
 
         Exemples:
             >>> v1 = Vect2D(2.0, 0.0)
             >>> v2 = v1.normalized
-            >>> print(v1.is_normalized)
-            False
-            >>> print(v2.is_normalized)
-            True
+            >>> print(v2)
+            (1.00E+00, 0.00E+00)
         """        
         vect = Vect2D(self.x, self.y)
         vect.normalize()
-        return vect      
+        return vect
     
     def normalize(self) -> None:
         """Modifie le vecteur courant pour qu'il soit unitaire.
         Cette transformation garde l'angle du vecteur.
         
+        Le vecteur doit être défini.
+        
         Exemples:
             >>> v1 = Vect2D(2.0, 0.0)
-            >>> print(v1.is_normalized)
-            False
             >>> v1.normalize()
-            >>> print(v1.is_normalized)
-            True
+            >>> print(v1)
+            (1.00E+00, 0.00E+00)
         """
         if self.is_defined:
             norm = self.length
@@ -1002,18 +1188,86 @@ class Vect2D:
     #------------------------------------------------------------------------------------------------------------
     
     def distance_squared_from(self, other : 'Vect2D') -> float:
+        """Retourne la distance euclidienne au carré entre ce vecteur et 
+        celui passé en argument.
+        
+        Args:
+            other (Vect2D): L'autre vecteur dont la distance est à évaluer.
+        
+        Exemples:
+            >>> v1 = Vect2D(8.0, -2.0)
+            >>> v2 = Vect2D(12.0, -5.0)
+            >>> v1.distance_squared_from(v2)
+            25.0
+        """        
         return (self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y)
     
     def distance_from(self, other : 'Vect2D') -> float:
+        """Retourne la distance euclidienne entre ce vecteur et celui 
+        passé en argument.
+        
+        Args:
+            other (Vect2D): L'autre vecteur dont la distance est à évaluer.
+        
+        Exemples:
+            >>> v1 = Vect2D(8.0, -2.0)
+            >>> v2 = Vect2D(12.0, -5.0)
+            >>> v1.distance_from(v2)
+            5.0
+        """        
         return sqrt(self.distance_squared_from(other))
     
     def is_perpendicular_to(self, other : 'Vect2D') -> bool:
+        """Retourne 'True' si ce vecteur est perpendiculaire à celui 
+        passé en argument. Sinon retourne 'False'.
+        
+        Args:
+            other (Vect2D): L'autre vecteur à comparer.
+        
+        Exemples:
+            >>> v1 = Vect2D(8.0, -2.0)
+            >>> v2 = Vect2D(12.0, -5.0)
+            >>> v1.is_perpendicular_to(v2)
+            False
+            >>> v1.is_perpendicular_to(v1.right_perpendicular)
+            True
+        """         
         return isclose(self.dot(other), 0.0)
     
     def is_parallel_to(self, other : 'Vect2D') -> bool:
-        return self.is_perpendicular_to(other.right_perpendicular)
+        """Retourne 'True' si ce vecteur est perpendiculaire à celui 
+        passé en argument. Sinon retourne 'False'.
+        
+        Args:
+            other (Vect2D): L'autre vecteur à comparer.
+        
+        Exemples:
+            >>> v1 = Vect2D(8.0, -2.0)
+            >>> v2 = Vect2D(12.0, -5.0)
+            >>> v1.is_parallel_to(v2)
+            False
+            >>> v1.is_parallel_to(v1.right_perpendicular.right_perpendicular)
+            True
+        """
+        return isclose(self.cross(other), 0.0)
+        #return self.is_perpendicular_to(other.right_perpendicular)
     
     def is_forming_accute_angle_with(self, other : 'Vect2D') -> bool: # the ~ same direction : acute angle 0 <= theta <= 90
+        """Retourne 'True' si ce vecteur et celui passé en argument forment 
+        un angle aigu. Sinon retourne 'False'.
+        
+        Args:
+            other (Vect2D): L'autre vecteur à comparer.
+        
+        Exemples:
+            >>> v1 = Vect2D.from_polar_degrees(10.0, 45.0)
+            >>> v2 = Vect2D.from_polar_degrees(10.0, 75.0)
+            >>> v3 = Vect2D.from_polar_degrees(10.0, 185.0)
+            >>> v1.is_forming_accute_angle_with(v2)
+            True
+            >>> v1.is_forming_accute_angle_with(v3)
+            False
+        """
         return self.dot(other) > 0.0
     
     def is_forming_obtuse_angle_with(self, other : 'Vect2D') -> bool: # the ~ opposite direction : obtuse angle 90 <= theta <= 180
@@ -1030,10 +1284,41 @@ class Vect2D:
     #                                         
     #-----------------------------------------
     def dot(self, other : 'Vect2D') -> float:
+        """Retourne le produit scalaire de ce vecteur avec celui passé en 
+        argument.
+        
+        Args:
+            other (Vect2D): L'autre vecteur.
+        
+        Exemples:
+            >>> v1 = Vect2D(2.0, -5.0)
+            >>> v2 = Vect2D(-3.0, 2.0)
+            >>> v1.dot(v2)
+            -16.0
+        """
         return self.x * other.x + self.y * other.y
     
     def cross(self, other : 'Vect2D') -> float:
+        """Retourne le produit vectoriel de ce vecteur avec celui passé en 
+        argument.
+        
+        Args:
+            other (Vect2D): L'autre vecteur.
+        
+        Exemples:
+            >>> v1 = Vect2D(2.0, -5.0)
+            >>> v2 = Vect2D(-3.0, 2.0)
+            >>> v1.cross(v2)
+            -11.0
+        """        
         return self.x * other.y - self.y * other.x
+    
+    
+    
+    # def translate(self, ...)
+    # def rotate(self, ...)
+    # def scale(self, ...)
+    # def transform(self, ...)
     
     
     #----------------------------------------------------------------------------------------------------
@@ -1045,25 +1330,187 @@ class Vect2D:
     #                 |__/                                              |__/                                 
     #----------------------------------------------------------------------------------------------------
     def angle_between(self, other : 'Vect2D') -> float: # in radians
+        """Retourne l'angle créé avec le vecteur passé en argument.
+        
+        L'angle est en radians.
+        
+        Args:
+            other (Vect2D): L'autre vecteur formant l'angle.
+        
+        Exemples:
+            >>> from math import isclose, pi, degrees
+            >>> v1 = Vect2D(5.0, 5.0)
+            >>> v2 = Vect2D.from_polar_degrees(5.0, 67.5)
+            >>> isclose(v1.angle_between(v2), pi / 8.0)
+            True
+            >>> round(degrees(v1.angle_between(v2)), 1)
+            22.5
+        """
         return acos(self.dot(other) / sqrt(self.length_squared * other.length_squared))
+
+    def angle_between_degrees(self, other : 'Vect2D') -> float:
+        """Retourne l'angle créé avec le vecteur passé en argument.
+        
+        L'angle est en degrées.
+        
+        Args:
+            other (Vect2D): L'autre vecteur formant l'angle.
+        
+        Exemples:
+            >>> from math import isclose, pi, degrees
+            >>> v1 = Vect2D(5.0, 5.0)
+            >>> v2 = Vect2D.from_polar_degrees(5.0, 67.5)
+            >>> isclose(v1.angle_between_degrees(v2), 22.5)
+            True
+            >>> round(v1.angle_between_degrees(v2),1)
+            22.5
+        """
+        return degrees(self.angle_between(other))
     
     def angle_disparity(self, other : 'Vect2D') -> float: # angle in radians with direction
-        return atan2(self.x * other.y - self.y * other.x, self.x * other.x + self.y * other.y)
+        """Retourne l'angle créé avec le vecteur passé en argument. 
+        La direction de l'angle est donné contrairement à la fonction 
+        angle_between :
+         - si l'angle est négatif, l'autre vecteur se trouve dans le sens 
+           inverse de rotation
+         - si l'angle est positif, l'autre vecteur se trouve dans le sens 
+           de rotation
+        
+        L'angle est en radians.
+        
+        Args:
+            other (Vect2D): L'autre vecteur formant l'angle.
+        
+        Exemples:
+            >>> from math import isclose, pi, degrees
+            >>> v1 = Vect2D(5.0, 5.0)
+            >>> v2 = Vect2D.from_polar_degrees(5.0, 67.5)
+            >>> isclose(v1.angle_disparity(v2), pi / 8.0)
+            True
+            >>> round(degrees(v1.angle_disparity(v2)), 1)
+            22.5
+            >>> round(degrees(v2.angle_disparity(v1)), 1)
+            -22.5
+        """
+        return atan2(self.cross(other), self.x * other.x + self.y * other.y)
+    
+    def angle_disparity_degrees(self, other : 'Vect2D') -> float: # angle in radians with direction
+        """Retourne l'angle créé avec le vecteur passé en argument. 
+        La direction de l'angle est donné contrairement à la fonction 
+        angle_between :
+         - si l'angle est négatif, l'autre vecteur se trouve dans le sens 
+           inverse de la rotation
+         - si l'angle est positif, l'autre vecteur se trouve dans le sens 
+           de la rotation
+        
+        L'angle est en degrées.
+        
+        Args:
+            other (Vect2D): L'autre vecteur formant l'angle.
+        
+        Exemples:
+            >>> from math import isclose
+            >>> v1 = Vect2D(5.0, 5.0)
+            >>> v2 = Vect2D.from_polar_degrees(5.0, 67.5)
+            >>> isclose(v1.angle_disparity_degrees(v2), 22.5)
+            True
+            >>> round(v1.angle_disparity_degrees(v2), 1)
+            22.5
+            >>> round(v2.angle_disparity_degrees(v1), 1)
+            -22.5
+        """
+        return degrees(self.angle_disparity(other))
+    
+    
     
     def scalar_projection(self, other : 'Vect2D') -> float:
+        """Retourne la projection scalaire de ce vecteur sur le vecteur passé 
+        en argument.
+        
+        Args:
+            other (Vect2D): Le vecteur sur lequel est projeté le vecteur 
+            courant.
+        
+        Exemples:
+            >>> v1 = Vect2D(3.0, 1.0)
+            >>> v2 = Vect2D(5.0, 0.0)
+            >>> v1.scalar_projection(v2)
+            3.0
+        """
         return self.dot(other) / other.length
 
     def vector_projection(self, other : 'Vect2D') -> 'Vect2D':
+        """Retourne la projection vectorielle de ce vecteur sur le vecteur passé 
+        en argument.
+        
+        Args:
+            other (Vect2D): Le vecteur sur lequel est projeté le vecteur 
+            courant.
+        
+        Exemples:
+            >>> v1 = Vect2D(3.0, 1.0)
+            >>> v2 = Vect2D(5.0, 0.0)
+            >>> print(v1.vector_projection(v2))
+            (3.00E+00, 0.00E+00)
+        """        
         return self.dot(other) / other.dot(other) * other
     
     def scalar_rejection(self, other : 'Vect2D') -> float:
-        # return sqrt(self.length_squared - self.scalar_projection(other) ** 2.)
+        """Retourne la réjection scalaire de ce vecteur sur le vecteur passé 
+        en argument.
+        
+        Args:
+            other (Vect2D): Le vecteur sur lequel est projeté le vecteur 
+            courant.
+        
+        Exemples:
+            >>> v1 = Vect2D(3.0, 1.0)
+            >>> v2 = Vect2D(5.0, 0.0)
+            >>> v1.scalar_rejection(v2)
+            1.0
+        """
         return (self.y * other.x - self.x * other.y) / other.length
     
     def vector_rejection(self, other : 'Vect2D') -> 'Vect2D':
+        """Retourne la réjection vectorielle de ce vecteur sur le vecteur passé 
+        en argument.
+        
+        Args:
+            other (Vect2D): Le vecteur sur lequel est projeté le vecteur 
+            courant.
+        
+        Exemples:
+            >>> v1 = Vect2D(3.0, 1.0)
+            >>> v2 = Vect2D(5.0, 0.0)
+            >>> print(v1.vector_rejection(v2))
+            (0.00E+00, 1.00E+00)
+        """     
         return self - self.vector_projection(other)
     
     def projection_analysis(self, other : 'Vect2D') -> tuple[float, 'Vect2D', float, 'Vect2D']:
+        """Retourne l'analyse complète de la projection de ce vecteur sur le vecteur passé 
+        en argument.
+        
+        Args:
+            other (Vect2D): Le vecteur sur lequel est projeté le vecteur 
+            courant.
+
+        Returns:
+            un tuple contenant :
+             - la projection scalaire
+             - la projection vectorielle
+             - la réjection scalaire
+             - la réjection vectorielle
+        
+        Exemples:
+            >>> v1 = Vect2D(3.0, 1.0)
+            >>> v2 = Vect2D(5.0, 0.0)
+            >>> analysis = v1.projection_analysis(v2)
+            >>> print(f'Projection : {analysis[0]} | {analysis[1]}')
+            Projection : 3.0 | (3.00E+00, 0.00E+00)
+            >>> print(f'Réjection : {analysis[2]} | {analysis[3]}')
+            Réjection : 1.0 | (0.00E+00, 1.00E+00)
+        """             
         scalar_proj = self.scalar_projection(other)
         vector_proj = scalar_proj * other.normalized
         scalar_rej = self.scalar_rejection(other)
@@ -1083,48 +1530,127 @@ class Vect2D:
     #---------------------------------------------------------------------------------------------------------
     
     def __eq__(self, other : 'Vect2D') -> bool: # self == other
+        """
+        >>> v1 = Vect2D()
+        >>> v2 = Vect2D(1.0, -1.5)
+        >>> v3 = Vect2D(1.0, -1.5)
+        >>> v1 == v2
+        False
+        >>> v2 == v3
+        True
+        """
         return isclose(self.x, other.x) and isclose(self.y, other.y)
     
     def __ne__(self, other : 'Vect2D') -> bool: # self != other
+        """
+        >>> v1 = Vect2D()
+        >>> v2 = Vect2D(1.0, -1.5)
+        >>> v3 = Vect2D(1.0, -1.5)
+        >>> v1 != v2
+        True
+        >>> v2 != v3
+        False
+        """
         return not (isclose(self.x, other.x) and isclose(self.y, other.y))
         
     def __neg__(self) -> 'Vect2D': # -self
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> print(-v1)
+        (-1.00E+00, 1.50E+00)
+        """
         return Vect2D(-self.x, -self.y)
         
     def __add__(self, other : 'Vect2D') -> 'Vect2D': # self + other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v2 = Vect2D(-2.0, 1.0)
+        >>> print(v1 + v2)
+        (-1.00E+00, -5.00E-01)
+        """
         return Vect2D(self.x + other.x, self.y + other.y)
 
     def __iadd__(self, other : 'Vect2D') -> 'Vect2D': # self += other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v1 += Vect2D(-2.0, 1.0)
+        >>> print(v1)
+        (-1.00E+00, -5.00E-01)
+        """
         self.x += other.x
         self.y += other.y
         return self
 
     def __sub__(self, other : 'Vect2D') -> 'Vect2D': # self - other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v2 = Vect2D(-2.0, 1.0)
+        >>> print(v1 - v2)
+        (3.00E+00, -2.50E+00)
+        """
         return Vect2D(self.x - other.x, self.y - other.y)
 
     def __isub__(self, other : 'Vect2D') -> 'Vect2D': # self -= other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v1 -= Vect2D(-2.0, 1.0)
+        >>> print(v1)
+        (3.00E+00, -2.50E+00)
+        """
         self.x -= other.x
         self.y -= other.y
         return self
 
     def __mul__(self, other : float) -> 'Vect2D': # self * other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> print(v1 * 5.0)
+        (5.00E+00, -7.50E+00)
+        """
         return Vect2D(self.x * other, self.y * other)
 
     def __rmul__(self, other : float) -> 'Vect2D': # other * self
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> print(5.0 * v1)
+        (5.00E+00, -7.50E+00)
+        """
         return Vect2D(self.x * other, self.y * other)
 
     def __imul__(self, other : float) -> 'Vect2D': # self *= other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v1 *= 5.0
+        >>> print(v1)
+        (5.00E+00, -7.50E+00)
+        """
         self.x *= other
         self.y *= other
         return self
 
     def __truediv__(self, other : float) -> 'Vect2D': # self / other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> print(v1 / 2.0)
+        (5.00E-01, -7.50E-01)
+        """
         return Vect2D(self.x / other, self.y / other)
 
     def __rtruediv__(self, other: float) -> 'Vect2D': # other / self
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> print(2.0 / v1)
+        (2.00E+00, -1.33E+00)
+        """
         return Vect2D(other / self.x, other / self.y)
 
     def __itruediv__(self, other : float) -> 'Vect2D': # self /= other
+        """
+        >>> v1 = Vect2D(1.0, -1.5)
+        >>> v1 /= 2.0
+        >>> print(v1)
+        (5.00E-01, -7.50E-01)
+        """
         self.x /= other
         self.y /= other
         return self
@@ -1228,11 +1754,97 @@ class Vect2D:
             (2.5-1.5j)
         """        
         return complex(self.x, self.y)
+    
+    
+    @classmethod
+    def from_data(cls, data : tuple[float, float] | list[float, float] | dict[str, float]) -> 'Vect2D':
+        """Crée une nouvelle instance de `Vect2D` à partir d'une structure existante :
+        - tuple ou liste de 2 float : 
+            - seulement 2 données
+            - représentant le x et le y
+            - (0.0, 0.0)
+            - [0.0, 0.0]
+        - dict de 2 float : 
+            - les clés doivent des str 'x' ou 'y' 
+            - toutes minuscules ou majuscules
+            - { 'x':0.0, 'y':0.0 }
+            - { 'X':0.0, 'Y':0.0 }
+        
+        Exemples:
+            >>> v1 = Vect2D.from_data((1.0, 2.5))
+            >>> print(v1)
+            (1.00E+00, 2.50E+00)
+            >>> v2 = Vect2D.from_data([1.0, 2.5])
+            >>> print(v2)
+            (1.00E+00, 2.50E+00)
+            >>> v3 = Vect2D.from_data({'x':1.0, 'y':2.5})
+            >>> print(v3)
+            (1.00E+00, 2.50E+00)
+            >>> v4 = Vect2D.from_data({'X':1.0, 'Y':2.5})
+            >>> print(v4)
+            (1.00E+00, 2.50E+00)
+        """               
+        if isinstance(data, tuple) and len(data) == 2:
+            return Vect2D(data[0], data[1])
+        if isinstance(data, list) and len(data) == 2:
+            return Vect2D(data[0], data[1])
+        if isinstance(data, dict):
+            k = set(data.keys()) 
+            if k == {'x', 'y'}:
+                return Vect2D(data['x'], data['y'])
+            elif k == {'X', 'Y'}:
+                return Vect2D(data['X'], data['Y'])
+        else:
+            raise TypeError("data is not compatible - must be a tuple/list of 2 float or a dict with 'x' or 'y'")
+    
+    @property
+    def as_tuple(self) -> tuple[float, float]:
+        """Crée et retourne un tuple de deux réels. La liste créée possède 
+        les abscisses et les ordonnées dans l'ordre.
+        
+        Ne modifie pas l'instance courante.
+        
+        Exemples:
+            >>> v1 = Vect2D(2.5, -1.5)
+            >>> print(v1.as_tuple)
+            (2.5, -1.5)
+        """     
+        return (self.x, self.y)
+
+    @property
+    def as_list(self) -> list[float, float]:
+        """Crée et retourne une liste de deux réels. La liste créée possède 
+        les abscisses et les ordonnées dans l'ordre.
+        
+        Ne modifie pas l'instance courante.
+        
+        Exemples:
+            >>> v1 = Vect2D(2.5, -1.5)
+            >>> print(v1.as_list)
+            [2.5, -1.5]
+        """     
+        return [self.x, self.y]
+
+    @property
+    def as_dict(self) -> dict[str, int]:
+        """Crée et retourne un dictionnaire de deux réels. Le dictionnaire 
+        possède les clés suivantes :
+        - 'x' : les abscisses 
+        - 'y' : les ordonnées
+        
+        Ne modifie pas l'instance courante.
+        
+        Exemples:
+            >>> v1 = Vect2D(2.5, -1.5)
+            >>> print(v1.as_dict)
+            {'x': 2.5, 'y': -1.5}
+        """             
+        return { 'x':self.x, 'y':self.y }
 
 
 
 Vect2D.UNDEFINED = Vect2D()
-"Représente un vecteur indéfini. C'est à dire un vecteur (0.0, 0.0)."
+"""Représente un vecteur indéfini. C'est à dire le vecteur (0.0, 0.0)."""
 
 
 
@@ -1240,6 +1852,9 @@ def __main_doctest():
     if bool(__debug__): # do not work
         import doctest
         doctest.testmod()#verbose=True)
+def __main_doctest():
+    import doctest
+    doctest.testmod()#verbose=True)
 
 if __name__ == "__main__":
     __main_doctest()
