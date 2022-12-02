@@ -149,40 +149,6 @@ class Movable():
     def speed(self, speed):
         self.__speed = speed
         
-class Touchable():
-    def __init__(self, friction_coeff, bounce_coeff):
-        self.__friction_coeff = friction_coeff
-        self.__bounce_coeff = bounce_coeff
-
-    def bounce(self, sim_dim:Vect2D):
-        if self.pos_x <= 0 + self.radius:
-            border = 0
-            self.speed.x = -self.speed.x * self.__bounce_coeff
-            self.speed.y *= self.__friction_coeff
-            self.pos_x = 2.0 * (border + self.radius) - self.pos_x
-
-        elif self.pos_x >= sim_dim.x - self.radius :
-            border = sim_dim.x
-            self.speed.x = -self.speed.x * self.__bounce_coeff
-            self.speed.y *= self.__friction_coeff
-            self.pos_x = 2.0 * (border - self.radius) - self.pos_x
-
-        if self.pos_y <= 0 + self.radius :
-            border = 0
-            self.speed.y = -self.speed.y * self.__bounce_coeff
-            self.speed.x *= self.__friction_coeff
-            self.pos_y = 2.0 * (border + self.radius) - self.pos_y
-
-        elif self.pos_y >= sim_dim.y - self.radius :
-            border = sim_dim.y
-            self.speed.y = -self.speed.y * self.__bounce_coeff
-            self.speed.x *= self.__friction_coeff
-            self.pos_y = 2.0 * (border - self.radius) - self.pos_y
-
-    @property
-    def bounce_coeff(self):
-        return self.__bounce_coeff
-
 class Updatable():
     def __init__(self):
         pass
@@ -490,17 +456,13 @@ class SimParamPanel(ParamPanel):
     def __init__(self):
         pass    
     
-class Circle(Entity, Touchable):
-    def __init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position:Vect2D, radius:int):
+class Circle(Entity):
+    def __init__(self, border_color, border_width, fill_color, position:Vect2D, radius:int):
         Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
-        Touchable.__init__(self, bounce_coeff=bounce_coeff, friction_coeff=friction_coeff)
         self.__fill_color = fill_color
         self.__border_color = border_color
         self.__radius = radius
 
-    def bounce(self):
-        Touchable.bounce() 
-        
 
     def draw(self, draw):
         
@@ -749,9 +711,7 @@ class DynamicCircle(Circle, Movable, Piloted):
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     border_width=5,
-                    bounce_coeff=0.95,
                     fill_color=RGBAColor(randomize=True),
-                    friction_coeff=0.95,
                     position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
                     radius=random.randrange(30,100),
                     acceleration=Vect2D(0,0),
@@ -763,7 +723,7 @@ class DynamicCircle(Circle, Movable, Piloted):
                     steering_behaviors=None,
                 ):
     
-        Circle.__init__(self, border_color, border_width, bounce_coeff, fill_color, friction_coeff, position, radius)
+        Circle.__init__(self, border_color, border_width, fill_color, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, slowing_distance, steering_force, steering_behaviors)
         
@@ -781,13 +741,9 @@ class DynamicCircle(Circle, Movable, Piloted):
     def move(self, time):
         Movable.move(self, time)
 
-    def bounce(self, sim_dim):
-        Touchable.bounce(self, sim_dim)
-
     def tick(self, time):
         self.steer()
         self.move(time)
-        # self.bounce(sim_dim)
     
 def main():
     App()
