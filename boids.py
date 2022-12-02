@@ -453,14 +453,34 @@ class ViewWindow(ttk.Label, Drawable):
 
             i = Image.new('RGBA', (int(self.width), int(self.height)), (0, 0, 0))
             draw = ImageDraw.Draw(i)
-
-            for sprite in simulation.sprites:
-                if self.__circle_is_drawn:
-                    sprite.draw(draw)            
-                if self.__speed_is_drawn:
+        
+            if self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw(draw)
                     sprite.draw_circle_speed(draw)
-                if self.__steering_force_is_drawn:
+                    sprite.draw_circle_steering_force(draw)                   
+            elif self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw_circle_speed(draw)
                     sprite.draw_circle_steering_force(draw)
+            elif self.__speed_is_drawn and not self.__steering_force_is_drawn and self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw(draw)
+                    sprite.draw_circle_speed(draw)                    
+            elif not self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw(draw)
+                    sprite.draw_circle_steering_force(draw)
+            elif self.__speed_is_drawn and not self.__steering_force_is_drawn and not self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw_circle_speed(draw)
+            elif not self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw_circle_steering_force(draw)
+            elif not self.__speed_is_drawn and not self.__steering_force_is_drawn and self.__circle_is_drawn:
+                for sprite in simulation.sprites:
+                    sprite.draw(draw)
+        
                
         
             self.__image_tk = ImageTk.PhotoImage(i)
@@ -525,15 +545,15 @@ class VisualParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__speed_var = tk.IntVar()
-        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0)
-        self.__speed_checkbutton.pack()
+        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0, width=20)
+        self.__speed_checkbutton.pack(padx=(50, 0))
         self.__steering_force_var = tk.IntVar()
-        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steering Force", variable=self.__steering_force_var, onvalue=1, offvalue=0)
-        self.__steering_force_checkbutton.pack()
+        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steers", variable=self.__steering_force_var, onvalue=1, offvalue=0, width=20)
+        self.__steering_force_checkbutton.pack(padx=(50, 0))
         self.__show_circle_var = tk.IntVar()
-        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Hide Circle", variable=self.__show_circle_var, onvalue=1, offvalue=0)
-        self.__show_circle_checkbutton.pack()
-
+        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Show Circles", variable=self.__show_circle_var, onvalue=0, offvalue=1, width=20)  
+        self.__show_circle_checkbutton.pack(padx=(50, 0))
+        
 
     @property
     def show_circle_checkbutton(self):
