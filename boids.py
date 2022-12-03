@@ -119,6 +119,10 @@ class Drawable():
     def position(self, position):
         self.__position = position
 
+    @fill_color.setter
+    def fill_color(self, fill_color):
+        self.__fill_color = fill_color
+
 class Movable():
     def __init__(self, acceleration, max_speed, speed):
         self.__acceleration = acceleration
@@ -162,7 +166,7 @@ class App(Tk, Updatable):
     
     def __init__(self):
         Tk.__init__(self)
-        self.__size = Vect2D(Tk.winfo_screenwidth(self) * 0.5, Tk.winfo_screenheight(self) * 0.8)
+        self.__size = Vect2D(Tk.winfo_screenwidth(self) * 0.8, Tk.winfo_screenheight(self) * 0.8)
         self.__gui = GUI(size=Vect2D(self.__size.x, self.__size.y), fill_color=RGBAColor(0 ,0, 0)) 
         self.title('Boids')
         self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
@@ -189,7 +193,7 @@ class App(Tk, Updatable):
         self.mainloop()
 
     def param_changed(self, event):
-        self.reset_simulation(key=self.__gui.main_panel.param_panel.param_selected)
+        self.reset_simulation()
 
     @property
     def size(self):
@@ -198,9 +202,8 @@ class App(Tk, Updatable):
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
         
-    # def reset_simulation(self, event=None, key:str="Default") -> None:
-    def reset_simulation(self, event=None, key:str="Seek Mouse") -> None:
-
+    def reset_simulation(self, event=None) -> None:
+        key = self.__gui.main_panel.param_panel.param_selected
         self.__simulation.reset(key)
 
     def tick(self):
@@ -248,110 +251,111 @@ class Simulation(Updatable):
         self.__sprites = []
         self.__mouse_pos = Vect2D(-1, -1)
         self.__is_running = True
+        self.__seed = 0
         
-        self.create_circles()
+        self.initialize_scenario()
         
-        # random_radius = random.randrange(5,50)
     
-    def create_circles(self, key:str="Default"):    
+    def initialize_scenario(self, key:str="Predator Chasing Prey"): 
         key = key.replace("\n", "")
-        
-        print(key)
-        
+        nb_balls = 0
+                
         match key:
-            case 'Seek or Flee':
-                for i in range(25):
-                    random_radius = random.randrange(5,50)
-                    random_steering_behavior = random.choice([Seek(target_entity=self.sprites(random.randint(0, len(self.sprites)-1))), Flee(target_entity=self.sprites(random.randint(0, len(self.sprites)-1)))])
+            case 'Seek, Flee or Wander':
+                nb_balls = 25
+                for i in range(nb_balls):
+                    self.__sprites.append(DynamicCircle(    border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(10, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            slowing_distance=10,
+                                                            steering_force=Vect2D(0,0),
+                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size)]))
 
-                    self.__sprites.append(DynamicCircle(
-                                                        border_color=RGBAColor(randomize=True),
-                                                        # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
-                                                        border_width=random.randrange(0, random_radius),
-                                                        # fill_color=RGBAColor(randomize=True),
-                                                        fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
-                                                        radius=random_radius,
-                                                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-                                                        acceleration=Vect2D(0,0),
-                                                        max_speed=100,
-                                                        #speed=Vect2D(0,0),
-                                                        speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                        max_steering_force=5,
-                                                        slowing_distance=10,
-                                                        steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size), random_steering_behavior]))
-            case 'Seek Mouse':
-                for _ in range(1):
-                    random_radius = random.randrange(15,75)
-                    random_steering_behavior = random.choice([PseudoWander(), Wander()])
+                for sprite in self.__sprites:
+                    random_sprite = random.choice(self.__sprites)
+                    while random_sprite == sprite:
+                        random_sprite = random.choice(self.__sprites)
 
-                    self.__sprites.append(DynamicCircle(border_color=RGBAColor(randomize=True),
-                                                        # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
-                                                        border_width=random.randrange(0, random_radius),
-                                                        # fill_color=RGBAColor(randomize=True),
-                                                        fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
-                                                        radius=random_radius,
-                                                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-                                                        acceleration=Vect2D(0,0),
-                                                        max_speed=100,
-                                                        #speed=Vect2D(0,0),
-                                                        speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                        max_steering_force=5,
-                                                        slowing_distance=10,
-                                                        steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[Seek(self.__mouse_pos), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+                    random_steering_behavior = random.choice([Seek(random_sprite), Flee(random_sprite), Wander()])
+                    sprite.steering_behaviors.append(random_steering_behavior)
+                    sprite.fill_color = RGBAColor(0, 128, 0, 255) if type(random_steering_behavior) is Flee else RGBAColor(128, 0, 0, 255) if type(random_steering_behavior) is Seek else RGBAColor(0, 0, 128, 255)
+
+            case 'Seek or Flee Mouse':
+                nb_balls = 20
+                for i in range(nb_balls):
+                    random_steering_behavior = random.choice([Seek(self.__mouse_pos), Flee(self.__mouse_pos)])
+
+                    self.__sprites.append(DynamicCircle(    border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color = RGBAColor(0, 128, 0, 255) if type(random_steering_behavior) is Flee else RGBAColor(128, 0, 0, 255) if type(random_steering_behavior) is Seek else RGBAColor(0, 0, 128, 255),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(10, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            slowing_distance=10,
+                                                            steering_force=Vect2D(0,0),
+                                                            steering_behaviors=[Wander(), random_steering_behavior, BorderRepulsion(sim_dim=self.__size)]))
+
             case 'Follow the leader':
-                for i in range(100):
-                    random_radius = random.randrange(1,2)
-                    random_steering_behavior = random.choice([PseudoWander(), Wander()])
-
-                    self.__sprites.append(DynamicCircle(border_color=RGBAColor(randomize=True),
-                                                        # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
-                                                        border_width=random.randrange(0, random_radius),
-                                                        # fill_color=RGBAColor(randomize=True),
-                                                        fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
-                                                        radius=random_radius,
-                                                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-                                                        acceleration=Vect2D(0,0),
-                                                        max_speed=100,
-                                                        #speed=Vect2D(0,0),
+                nb_balls = 20
+                for i in range(nb_balls):
+                    self.__sprites.append(DynamicCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
                                                         speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+                                                        fill_color = RGBAColor(128, 0, 128, 255)  if len(self.__sprites) == nb_balls-1 else RGBAColor(128, 128, 0, 255),
+                                                        border_color=RGBAColor(randomize=True),
+                                                        border_width=5,
+                                                        radius=random.randint(10, 50),
+                                                        acceleration=Vect2D(0,0),
+                                                        max_speed= 100,
                                                         max_steering_force=5,
                                                         slowing_distance=10,
                                                         steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), 
-                                                                            BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)] if len(self.__sprites) == 0 else [Pursuit(self.sprites[i-1]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
-            case _:
-                for _ in range(2):
-                    random_radius = random.randrange(15,75)
-                    random_steering_behavior = random.choice([PseudoWander(), Wander()])
+                                                        steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)] if i == nb_balls-1 else [BorderRepulsion(sim_dim=self.__size)]))
 
-                    self.__sprites.append(DynamicCircle(border_color=RGBAColor(randomize=True),
-                                                        # border_color=RGBAColor(r=255,g=0,b=0,a=255) if isinstance(random_steering_behavior, Seek) else RGBAColor(r=0,g=0,b=255,a=255),
-                                                        border_width=random.randrange(0, random_radius),
-                                                        # fill_color=RGBAColor(randomize=True),
-                                                        fill_color= RGBAColor(128, 0, 0, 255) if not isinstance(random_steering_behavior, Flee) else RGBAColor(0, 128, 0, 255),
-                                                        radius=random_radius,
-                                                        position=Vect2D(random.randrange(0 + random_radius, int(self.width) - random_radius),random.randrange(0 + random_radius, int(self.height) - random_radius)),
-                                                        acceleration=Vect2D(0,0),
-                                                        max_speed=100,
-                                                        #speed=Vect2D(0,0),
+                for i, sprite in enumerate(self.__sprites):
+                    if i != len(self.__sprites)-1:
+                        sprite.steering_behaviors.append(Pursuit(self.__sprites[i-1]))
+                        sprite.radius = (nb_balls - i - 1) * 2
+                    else: sprite.radius = nb_balls * 2
+
+            case 'Predator Chasing Prey': # Default
+                nb_balls = 6
+                for i in range(nb_balls):
+                    self.__sprites.append(DynamicCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
                                                         speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+                                                        border_color=RGBAColor(randomize=True),
+                                                        border_width=5,
+                                                        acceleration=Vect2D(0,0),
+                                                        max_speed= 100,
                                                         max_steering_force=5,
                                                         slowing_distance=10,
                                                         steering_force=Vect2D(0,0),
-                                                        steering_behaviors=[Wander(is_in=True, radius=50, circle_distance=300), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)] if len(self.__sprites) == 0 else [Pursuit(self.sprites[0]), BorderRepulsion(attraction_repulsion_force=10000, sim_dim=self.__size)]))
+                                                        steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)] if i%2 == 0 else [Pursuit(self.sprites[i-1]), BorderRepulsion(sim_dim=self.__size)]))
+
+                for i, sprite in enumerate(self.__sprites):
+                    sprite.fill_color = RGBAColor(128, 0, 0, 255) if type(sprite.steering_behaviors[0]) is Pursuit else RGBAColor(0, 128, 0, 255)
+                    sprite.radius = 60 if type(sprite.steering_behaviors[0]) is Pursuit else 30
+                    if i%2 == 0 and i != len(self.__sprites) - 1:
+                        self.__sprites[i].steering_behaviors.append(Evade(self.__sprites[i+1]))
+
 
     def tick(self, time):
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
 
-    def reset(self, key:str="Default"):
+    def reset(self, key:str="Predator Cfhasing Prey"):
         self.__is_running = True
-        
         self.__sprites = []
-        self.create_circles(key)
+        self.initialize_scenario(key)
 
     def move_mouse(self, event):
         self.__mouse_pos.set(event.x, event.y)
@@ -397,7 +401,7 @@ class GUI(ttk.Frame, Drawable):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar()
-        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.82, size.y * 0.99), fill_color=fill_color)   
+        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)   
         self.__main_panel.grid(row=0, column=0, rowspan=3, sticky='nsew')
         self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
 
@@ -586,7 +590,7 @@ class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
-        self.__param_selected.set("Default")
+        self.__param_selected.set("Predator Chasing Prey")
         self.__options_list = Utils.readfile("scenarios.txt")
         self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
     
@@ -650,6 +654,14 @@ class Circle(Entity):
         self.__border_color = border_color
         self.__radius = radius
 
+    
+    @property
+    def radius(self):
+        return self.__radius
+
+    @radius.setter
+    def radius(self, radius):
+        self.__radius = radius
 
     def draw(self, draw):
         
@@ -668,15 +680,7 @@ class Circle(Entity):
     @abstractmethod
     def tick(self, time):
         pass
-
-    @property
-    def radius(self):
-        return self.__radius
     
-class StaticCircle(Circle):
-    def __init__(self):
-        Circle.init(self)
-
 class SteeringBehavior():
     def __init__(self, target_entity:Entity=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
@@ -700,13 +704,6 @@ class SteeringBehavior():
     def target_entity(self, target_entity):
         self.__target_entity = target_entity
     
-class CollisionAvoidance(SteeringBehavior):
-    def __init__(self):
-        super().__init__(self)
-        
-    def behave(self, origin_entity: Entity, target_entity: Entity):
-        return super().behave(origin_entity, target_entity)
-  
 
 class Seek(SteeringBehavior):
     def __init__(self, target_entity:Entity=None, attraction_repulsion_force=1, distance_to_target=None):
@@ -716,21 +713,18 @@ class Seek(SteeringBehavior):
         if self.target_entity is not None:
             if isinstance(self.target_entity, Entity):
                 desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
-                return desired_speed - origin_entity.speed
+                return desired_speed - origin_entity.speed * self.attraction_repulsion_force
             elif self.target_entity.x != -1 and self.target_entity.y != -1:
-                print("target="+str(self.target_entity))
                 desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
-                return desired_speed - origin_entity.speed
+                return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
             else: 
-                print("target="+str(self.target_entity))
                 return Vect2D(0, 0)
         else:
             return Vect2D(0,0)
             
-  
 class Wander(Seek):
-    def __init__(self, target_entity:Entity=None, radius:float=100, circle_distance:float=100, is_in:bool=False):
-        super().__init__()
+    def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force=1):
+        super().__init__(attraction_repulsion_force=attraction_repulsion_force)
         """radius will increase the turning distance
         circle_distance will increase the distance before turning
         """        
@@ -741,11 +735,10 @@ class Wander(Seek):
    
    
     def behave(self, origin_entity: Entity)->Vect2D:     
-        """Retruns a vector that points in a random direction
+        """Returns a vector that points in a random direction
 
         Args:
             origin_entity (Entity): the sprite that is wandering
-            target_entity (Entity, optional): Must stay None. Defaults to None.
 
         Returns:
             Vect2D: displacement vector
@@ -798,12 +791,11 @@ class PseudoWander(SteeringBehavior):
         vector.y = math.sin(angle) * length
         return vector
         
-    def behave(self, origin_entity: Entity, target_entity: Entity=None)->Vect2D:     
+    def behave(self, origin_entity: Entity)->Vect2D:     
         """Retruns a vector that points in a random direction
 
         Args:
             origin_entity (Entity): the sprite that is wandering
-            target_entity (Entity, optional): Must stay None. Defaults to None.
 
         Returns:
             Vect2D: displacement vector
@@ -826,27 +818,27 @@ class PseudoWander(SteeringBehavior):
         
         
 class Flee(Seek):
-    def __init__(self, target_entity:Entity=None):
-        super().__init__(target_entity)
+    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=-1):
+        super().__init__(target_entity, attraction_repulsion_force)
         
-    def behave(self, origin_entity: Entity, target_entity: Vect2D )-> Vect2D:
-        return super().behave(origin_entity, target_entity) * -1   
+    def behave(self, origin_entity: Entity)-> Vect2D:
+        return super().behave(origin_entity)  
     
 class Pursuit(SteeringBehavior):
-    def __init__(self, target_entity:Entity=None, ratio:int = 1):
-        super().__init__(target_entity)
+    def __init__(self, target_entity:Entity=None, ratio:int = 1, attraction_repulsion_force:int=1):
+        super().__init__(target_entity, attraction_repulsion_force=attraction_repulsion_force)
         self.__ratio = ratio
         
     def behave(self, origin_entity: Entity) -> Vect2D:
         if self.target_entity is not None:
             estimated_position = self.target_entity.position + self.target_entity.speed  * self.__ratio 
             desired_speed = (estimated_position - origin_entity.position).normalized * origin_entity.max_speed
-            return desired_speed - origin_entity.speed
+            return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         
             
 class BorderRepulsion(SteeringBehavior):
-    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=1, sim_dim:Vect2D=None):       
-        SteeringBehavior.__init__(self, target_entity, attraction_repulsion_force=attraction_repulsion_force)
+    def __init__(self, attraction_repulsion_force=5000, sim_dim:Vect2D=None):       
+        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
         self.__sim_dim = sim_dim
 
     def behave(self, origin_entity:Entity):
@@ -866,11 +858,11 @@ class BorderRepulsion(SteeringBehavior):
 
                      
 class Evade(Pursuit):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, target_entity:Entity=None, ratio:int = 1, attraction_repulsion_force:int=-1):
+        super().__init__(target_entity, ratio, attraction_repulsion_force)
         
-    def behave(self, origin_entity: Entity, target_entity: Vect2D)-> Vect2D:
-        return super().behave(origin_entity, target_entity) * -1   
+    def behave(self, origin_entity: Entity)-> Vect2D:
+        return super().behave(origin_entity)  
     
             
 
@@ -885,8 +877,8 @@ class Piloted():
     def steer(self):
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
-                    self.steering_force += steering_behavior.behave(origin_entity=self)
-            
+                self.steering_force += steering_behavior.behave(origin_entity=self)
+
         self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
     
@@ -908,11 +900,11 @@ class DynamicCircle(Circle, Movable, Piloted):
                     border_width=5,
                     fill_color=RGBAColor(randomize=True),
                     position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
-                    radius=random.randrange(15,75),
+                    radius=random.randint(10, 50),
                     acceleration=Vect2D(0,0),
-                    speed=Vect2D(random.randrange(-10,10),random.randrange(-10,10)),
+                    speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
                     max_speed= 100,
-                    max_steering_force=1,
+                    max_steering_force=5,
                     slowing_distance=10,
                     steering_force=Vect2D(0,0),
                     steering_behaviors=None,
@@ -936,7 +928,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
         
     def draw_circle_steering_force(self, draw):
-        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
+        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
