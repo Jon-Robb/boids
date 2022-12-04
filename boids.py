@@ -8,6 +8,13 @@ from PIL import Image, ImageDraw, ImageTk
 from vect2d import Vect2D
 import math
 
+#  __    __  .___________. __   __       __  .___________. __   _______     _______.
+# |  |  |  | |           ||  | |  |     |  | |           ||  | |   ____|   /       |
+# |  |  |  | `---|  |----`|  | |  |     |  | `---|  |----`|  | |  |__     |   (----`
+# |  |  |  |     |  |     |  | |  |     |  |     |  |     |  | |   __|     \   \    
+# |  `--'  |     |  |     |  | |  `----.|  |     |  |     |  | |  |____.----)   |   
+#  \______/      |__|     |__| |_______||__|     |__|     |__| |_______|_______/    
+                                                                                                                                                      
 class Utils():
     def clamp_max(value, max):
         return min(value, max)
@@ -18,7 +25,6 @@ class Utils():
             for line in file:
                 data.append(line)
         return data
-
 
 class RGBAColor():
     def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255, randomize:bool=False):
@@ -57,7 +63,198 @@ class RGBAColor():
         self.__b = random.randint(0, 255)
         self.__a = random.randint(0, 255)
 
+#      _______.___________. _______  _______ .______       __  .__   __.   _______    .______    _______  __    __       ___   ____    ____  __    ______   .______          _______.
+#     /       |           ||   ____||   ____||   _  \     |  | |  \ |  |  /  _____|   |   _  \  |   ____||  |  |  |     /   \  \   \  /   / |  |  /  __  \  |   _  \        /       |
+#    |   (----`---|  |----`|  |__   |  |__   |  |_)  |    |  | |   \|  | |  |  __     |  |_)  | |  |__   |  |__|  |    /  ^  \  \   \/   /  |  | |  |  |  | |  |_)  |      |   (----`
+#     \   \       |  |     |   __|  |   __|  |      /     |  | |  . `  | |  | |_ |    |   _  <  |   __|  |   __   |   /  /_\  \  \      /   |  | |  |  |  | |      /        \   \    
+# .----)   |      |  |     |  |____ |  |____ |  |\  \----.|  | |  |\   | |  |__| |    |  |_)  | |  |____ |  |  |  |  /  _____  \  \    /    |  | |  `--'  | |  |\  \----.----)   |   
+# |_______/       |__|     |_______||_______|| _| `._____||__| |__| \__|  \______|    |______/  |_______||__|  |__| /__/     \__\  \__/     |__|  \______/  | _| `._____|_______/    
+                                                                                                                                                                                   
+class SteeringBehavior():
+    def __init__(self, target_entity:type['Entity']=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
+        self.__attraction_repulsion_force = attraction_repulsion_force
+        self.__distance_to_target = distance_to_target
+        self.__resulting_direction = None
+        self.__target_entity = target_entity
 
+    @abstractmethod    
+    def behave(self, origin_entity:type['Entity']):
+        pass  
+    
+    @property
+    def attraction_repulsion_force(self):
+        return self.__attraction_repulsion_force
+
+    @property
+    def target_entity(self):
+        return self.__target_entity
+    
+    @target_entity.setter
+    def target_entity(self, target_entity):
+        self.__target_entity = target_entity
+    
+class Seek(SteeringBehavior):
+    def __init__(self, target_entity:type['Entity']=None, attraction_repulsion_force=1, distance_to_target=None):
+        SteeringBehavior.__init__(self, target_entity, attraction_repulsion_force, distance_to_target)
+
+    def behave(self, origin_entity: type['Entity']) -> Vect2D:
+        if self.target_entity is not None:
+            if isinstance(self.target_entity, Entity):
+                desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
+                return desired_speed - origin_entity.speed * self.attraction_repulsion_force
+            elif self.target_entity.x != -1 and self.target_entity.y != -1:
+                desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
+                return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
+            else: 
+                return Vect2D(0, 0)
+        else:
+            return Vect2D(0,0)
+            
+class Wander(Seek):
+    def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force=1):
+        super().__init__(attraction_repulsion_force=attraction_repulsion_force)
+        """radius will increase the turning distance
+        circle_distance will increase the distance before turning
+        """        
+        self.__circle_distance = circle_distance
+        self.__radius = radius
+        self.__is_in = is_in
+        self.__circle_center = None
+   
+   
+    def behave(self, origin_entity: type['Entity'])->Vect2D:     
+        """Returns a vector that points in a random direction
+
+        Args:
+            origin_entity (Entity): the sprite that is wandering
+
+        Returns:
+            Vect2D: displacement vector
+        """        
+         
+        circle_center_sprite_relative = origin_entity.speed.normalized * self.__circle_distance
+        self.__circle_center = origin_entity.position + circle_center_sprite_relative
+        displacement = Vect2D.from_random_normalized()
+        
+        if self.__is_in:
+            displacement *= random.random() * self.__radius
+        else:
+            displacement *= self.__radius
+            
+        self.target_entity = self.__circle_center + displacement
+        
+        return super().behave(origin_entity)
+        
+        
+    def draw(self, draw):
+        draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="cyan")
+        draw.ellipse([self.target_entity.x - 5, self.target_entity.y - 5, self.target_entity.x + 5, self.target_entity.y + 5], fill="cyan")
+        
+        
+        
+    @property
+    def circle_distance(self):
+        return self.__circle_distance
+    
+    @property
+    def radius(self):
+        return self.__radius
+        
+class PseudoWander(SteeringBehavior):
+    def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
+        super().__init__()
+        """radius will increase the turning distance
+        circle_distance will increase the distance before turning
+        angle_change will increase the turning rate
+        """        
+        self.__circle_distance = circle_distance
+        self.__radius = radius
+        self.__angle_change = angle_change
+        self.__on_or_in = False
+        self.__wander_angle = random.random() * 2 * math.pi
+        
+    def setAngle(self, vector:Vect2D, angle:float)->Vect2D:
+        length = vector.length
+        vector.x = math.cos(angle) * length
+        vector.y = math.sin(angle) * length
+        return vector
+        
+    def behave(self, origin_entity: type['Entity'])->Vect2D:     
+        """Retruns a vector that points in a random direction
+
+        Args:
+            origin_entity (Entity): the sprite that is wandering
+
+        Returns:
+            Vect2D: displacement vector
+        """        
+         
+        circle_center = origin_entity.speed.copy()
+        circle_center.normalize()
+        circle_center *= self.__circle_distance
+        
+        displacement = Vect2D.from_random_normalized()
+        displacement *= self.__radius
+        
+        self.setAngle(displacement, self.__wander_angle)
+        
+        self.__wander_angle += (random.random() * self.__angle_change) - (self.__angle_change * .5)
+        
+        desired_speed = circle_center + displacement
+        
+        return desired_speed - origin_entity.speed
+            
+class Flee(Seek):
+    def __init__(self, target_entity:type['Entity']=None, attraction_repulsion_force=-1):
+        super().__init__(target_entity, attraction_repulsion_force)
+        
+    def behave(self, origin_entity: type['Entity'])-> Vect2D:
+        return super().behave(origin_entity)  
+    
+class Pursuit(SteeringBehavior):
+    def __init__(self, target_entity:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=1):
+        super().__init__(target_entity, attraction_repulsion_force=attraction_repulsion_force)
+        self.__ratio = ratio
+        
+    def behave(self, origin_entity: type['Entity']) -> Vect2D:
+        if self.target_entity is not None:
+            estimated_position = self.target_entity.position + self.target_entity.speed  * self.__ratio 
+            desired_speed = (estimated_position - origin_entity.position).normalized * origin_entity.max_speed
+            return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
+            
+class BorderRepulsion(SteeringBehavior):
+    def __init__(self, attraction_repulsion_force=5000, sim_dim:Vect2D=None):       
+        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
+        self.__sim_dim = sim_dim
+
+    def behave(self, origin_entity:type['Entity']):
+        force = self.attraction_repulsion_force
+
+        distance_from_left = origin_entity.position.x - origin_entity.width / 2
+        distance_from_right = self.__sim_dim.x - origin_entity.position.x - origin_entity.width / 2
+        distance_from_top = origin_entity.position.y - origin_entity.height / 2
+        distance_from_bottom = self.__sim_dim.y - origin_entity.position.y - origin_entity.height / 2
+
+        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 2, 0) if distance_from_left > 0 else Vect2D(force, 0)
+        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 2, 0) if distance_from_right > 0 else Vect2D(-force, 0)
+        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 2, 2) if distance_from_top > 0 else Vect2D(0, force)
+        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 2, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
+        return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
+             
+class Evade(Pursuit):
+    def __init__(self, target_entity:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=-1):
+        super().__init__(target_entity, ratio, attraction_repulsion_force)
+        
+    def behave(self, origin_entity: type['Entity'])-> Vect2D:
+        return super().behave(origin_entity)  
+               
+
+#  __  .__   __. .___________. _______ .______       _______    ___       ______  _______     _______.
+# |  | |  \ |  | |           ||   ____||   _  \     |   ____|  /   \     /      ||   ____|   /       |
+# |  | |   \|  | `---|  |----`|  |__   |  |_)  |    |  |__    /  ^  \   |  ,----'|  |__     |   (----`
+# |  | |  . `  |     |  |     |   __|  |      /     |   __|  /  /_\  \  |  |     |   __|     \   \    
+# |  | |  |\   |     |  |     |  |____ |  |\  \----.|  |    /  _____  \ |  `----.|  |____.----)   |   
+# |__| |__| \__|     |__|     |_______|| _| `._____||__|   /__/     \__\ \______||_______|_______/   
 class Drawable():
     def __init__(self, border_color, border_width, fill_color, position:Vect2D, size:Vect2D):
         self.__border_color = border_color
@@ -153,6 +350,33 @@ class Movable():
     def speed(self, speed):
         self.__speed = speed
         
+class Piloted():
+    def __init__(self, max_steering_force:int, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
+        self.__max_steering_force = max_steering_force
+        self.__slowing_distance = slowing_distance
+        self.steering_force = steering_force
+        self.__steering_behaviors = steering_behaviors
+
+    def steer(self):
+        if self.__steering_behaviors is not None:
+            for steering_behavior in self.__steering_behaviors:
+                self.steering_force += steering_behavior.behave(origin_entity=self)
+
+        self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
+        
+    
+    @property
+    def steering_force(self):
+        return self.__steering_force
+    
+    @property
+    def steering_behaviors(self):
+        return self.__steering_behaviors
+
+    @steering_force.setter
+    def steering_force(self, steering_force):
+        self.__steering_force = steering_force
+         
 class Updatable():
     def __init__(self):
         pass
@@ -162,75 +386,67 @@ class Updatable():
         pass
 
 
-class App(Tk, Updatable):
-    
-    def __init__(self):
-        Tk.__init__(self)
-        self.__size = Vect2D(Tk.winfo_screenwidth(self) * 0.8, Tk.winfo_screenheight(self) * 0.8)
-        self.__gui = GUI(size=Vect2D(self.__size.x, self.__size.y), fill_color=RGBAColor(0 ,0, 0)) 
-        self.title('Boids')
-        self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
-        self.geometry()
-        self.iconbitmap('boids.ico')
-        self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
-        
-        self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
-        self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
-        self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
-        self.__gui.main_panel.visual_param_panel.show_fov_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_fov)
-        
-        
-        self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
-        self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
-        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
-        self.__gui.main_panel.control_panel.start_stop_button.bind('<Button-1>', self.toggle_simulation)
-        self.__gui.main_panel.control_panel.next_button.bind('<Button-1>', self.tick_simulation)
-        self.__gui.main_panel.control_panel.reset_button.bind('<Button-1>', self.reset_simulation)
-        self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
+#   ______   ______   .___  ___. .______     ______   .__   __.  _______ .__   __. .___________.    _______.
+#  /      | /  __  \  |   \/   | |   _  \   /  __  \  |  \ |  | |   ____||  \ |  | |           |   /       |
+# |  ,----'|  |  |  | |  \  /  | |  |_)  | |  |  |  | |   \|  | |  |__   |   \|  | `---|  |----`  |   (----`
+# |  |     |  |  |  | |  |\/|  | |   ___/  |  |  |  | |  . `  | |   __|  |  . `  |     |  |        \   \    
+# |  `----.|  `--'  | |  |  |  | |  |      |  `--'  | |  |\   | |  |____ |  |\   |     |  |    .----)   |   
+#  \______| \______/  |__|  |__| | _|       \______/  |__| \__| |_______||__| \__|     |__|    |_______/    
+                                                                                                          
+class Sight():
+    def __init__(self, fov:float, range:float, orientation:float, owner:type['Entity']):
+        self.__fov = fov
+        self.__range = range
+        self.__orientation = orientation
+        self.__owner = owner
 
-        self.tick()
-                
-        self.mainloop()
+    def is_visible(self, target_position:Vect2D):
+        return self.is_in_range(target_position) and self.is_in_fov(target_position)
 
-    def param_changed(self, event):
-        self.reset_simulation()
+    def is_in_range(self, target_position:Vect2D):
+        return self.__owner.position.distance_to(target_position) <= self.__range
+
+    def is_in_fov(self, target_position:Vect2D):
+        return self.__owner.position.angle_to(target_position) <= self.__fov
 
     @property
-    def size(self):
-        return self.__size
-
-    def tick_simulation(self, event=None):
-        self.__simulation.tick(time=0.1)
-        
-    def reset_simulation(self, event=None) -> None:
-        key = self.__gui.main_panel.param_panel.param_selected
-        self.__simulation.reset(key)
-
-    def tick(self):
-        if self.__simulation.is_running:
-            self.tick_simulation()
-        self.__gui.view_window.update_view(self.__simulation)
-        self.after(10, self.tick)
-        
-    def toggle_simulation(self, event):
-        self.__simulation.toggle_running(event)
-        if self.__simulation.is_running:
-            self.__gui.main_panel.control_panel.start_stop_button.config(text="Stop")
-            self.__gui.main_panel.control_panel.next_button.config(state="disabled")
-        else:
-            self.__gui.main_panel.control_panel.start_stop_button.config(text="Start")
-            self.__gui.main_panel.control_panel.next_button.config(state="normal")
-            
-                   
-    # APP getters #    
-    @property
-    def width(self):
-        return self.__size.x
+    def fov(self):
+        return self.__fov
 
     @property
-    def height(self):
-        return self.__size.y
-     
+    def range(self):
+        return self.__range
+
+    @property
+    def position(self):
+        return self.__position
+
+    @property
+    def orientation(self):
+        return self.__orientation
+
+    @fov.setter
+    def fov(self, fov):
+        self.__fov = fov
+
+    @range.setter
+    def range(self, range):
+        self.__range = range
+
+    @position.setter
+    def position(self, position):
+        self.__position = position
+
+    @orientation.setter
+    def orientation(self, orientation):
+        self.__orientation = orientation
+
+# .___  ___.   ______    _______   _______  __      
+# |   \/   |  /  __  \  |       \ |   ____||  |     
+# |  \  /  | |  |  |  | |  .--.  ||  |__   |  |     
+# |  |\/|  | |  |  |  | |  |  |  ||   __|  |  |     
+# |  |  |  | |  `--'  | |  '--'  ||  |____ |  `----.
+# |__|  |__|  \______/  |_______/ |_______||_______|  
 class Entity(Drawable, Updatable):
     def __init__(self, border_color, border_width, fill_color, position, size):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
@@ -244,6 +460,89 @@ class Entity(Drawable, Updatable):
     def tick(self):
         pass
      
+class Circle(Entity):
+    def __init__(self, border_color, border_width, fill_color, position:Vect2D, radius:int):
+        Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
+        self.__fill_color = fill_color
+        self.__border_color = border_color
+        self.__radius = radius
+
+    
+    @property
+    def radius(self):
+        return self.__radius
+
+    @radius.setter
+    def radius(self, radius):
+        self.__radius = radius
+
+    def draw(self, draw):
+        
+        draw.ellipse(
+                [self.position.x - self.__radius,
+                self.position.y - self.__radius,
+                self.position.x + self.__radius,
+                self.position.y + self.__radius],
+                fill=self.fill_color,
+                width=self.border_width,
+                outline=self.border_color)
+       
+        # self.tki = ImageTk.PhotoImage(canvas)
+        # label["image"] = self.tki
+
+    @abstractmethod
+    def tick(self, time):
+        pass
+    
+class DynamicCircle(Circle, Movable, Piloted):
+    def __init__(   self,
+                    border_color=RGBAColor(randomize=True),
+                    border_width=5,
+                    fill_color=RGBAColor(randomize=True),
+                    position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                    radius=random.randint(10, 50),
+                    acceleration=Vect2D(0,0),
+                    speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                    max_speed= 100,
+                    max_steering_force=5,
+                    slowing_distance=10,
+                    steering_force=Vect2D(0,0),
+                    steering_behaviors=None,
+                ):
+    
+        Circle.__init__(self, border_color, border_width, fill_color, position, radius)
+        Movable.__init__(self, acceleration, max_speed, speed)
+        Piloted.__init__(self, max_steering_force, slowing_distance, steering_force, steering_behaviors)
+        
+    def draw(self, draw):
+        Circle.draw(self, draw)
+        # draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
+        
+        # for steering_behavior in self.steering_behaviors:
+        #     # if isinstance(steering_behavior, Wander):
+        #     if hasattr(steering_behavior, "draw"):
+        #         steering_behavior.draw(draw)
+
+    def draw_circle_speed(self, draw):
+        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        
+    def draw_circle_steering_force(self, draw):
+        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
+        for steering_behavior in self.steering_behaviors:
+            if hasattr(steering_behavior, "draw"):
+                    steering_behavior.draw(draw)
+                    
+    def draw_fov(self, draw):
+        pass
+
+    def move(self, time):
+        Movable.move(self, time)
+
+    def tick(self, time):
+        self.steer()
+        self.move(time)
+                                                                                            
 class Simulation(Updatable):
     def __init__(self, size=Vect2D(100,100)):
 
@@ -396,6 +695,13 @@ class Simulation(Updatable):
     def is_running(self):
         return self.__is_running
 
+#   _______  __    __   __ 
+#  /  _____||  |  |  | |  |
+# |  |  __  |  |  |  | |  |
+# |  | |_ | |  |  |  | |  |
+# |  |__| | |  `--'  | |  |
+#  \______|  \______/  |__|
+
 class GUI(ttk.Frame, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size:Vect2D=None):
         ttk.Frame.__init__(self, root=None, text=None)
@@ -412,7 +718,6 @@ class GUI(ttk.Frame, Drawable):
     @property
     def view_window(self):
         return self.__view_window  
-
 
 class ControlBar(ttk.Frame):
     def __init__(self):
@@ -436,7 +741,6 @@ class ControlBar(ttk.Frame):
     def visual_param_panel(self):
         return self.__visual_param_panel
 
-
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
         ttk.LabelFrame.__init__(self, root=None, text=text)
@@ -458,7 +762,6 @@ class StartStopPanel(ttk.LabelFrame):
     @property
     def reset_button(self):
         return self.__reset_button
-
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
@@ -585,7 +888,6 @@ class ViewWindow(ttk.Label, Drawable):
     def canvas(self, canvas):
         self.__canvas = canvas
 
-
 class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
@@ -608,7 +910,6 @@ class ParamPanel(ttk.LabelFrame):
     @property
     def combobox(self):
         return self.__combobox
-
 
 class VisualParamPanel(ttk.LabelFrame):
     def __init__(self, title):
@@ -647,302 +948,81 @@ class SimParamPanel(ParamPanel):
     def __init__(self):
         pass    
     
-class Circle(Entity):
-    def __init__(self, border_color, border_width, fill_color, position:Vect2D, radius:int):
-        Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
-        self.__fill_color = fill_color
-        self.__border_color = border_color
-        self.__radius = radius
-
+#  __________   ___  _______   ______  __    __  .___________. __    ______   .__   __.
+# |   ____\  \ /  / |   ____| /      ||  |  |  | |           ||  |  /  __  \  |  \ |  |
+# |  |__   \  V  /  |  |__   |  ,----'|  |  |  | `---|  |----`|  | |  |  |  | |   \|  |
+# |   __|   >   <   |   __|  |  |     |  |  |  |     |  |     |  | |  |  |  | |  . `  |
+# |  |____ /  .  \  |  |____ |  `----.|  `--'  |     |  |     |  | |  `--'  | |  |\   |
+# |_______/__/ \__\ |_______| \______| \______/      |__|     |__|  \______/  |__| \__|
+class App(Tk, Updatable):
     
-    @property
-    def radius(self):
-        return self.__radius
-
-    @radius.setter
-    def radius(self, radius):
-        self.__radius = radius
-
-    def draw(self, draw):
+    def __init__(self):
+        Tk.__init__(self)
+        self.__size = Vect2D(Tk.winfo_screenwidth(self) * 0.8, Tk.winfo_screenheight(self) * 0.8)
+        self.__gui = GUI(size=Vect2D(self.__size.x, self.__size.y), fill_color=RGBAColor(0 ,0, 0)) 
+        self.title('Boids')
+        self.geometry("{}x{}+{}+{}".format(int(self.width), (int(self.height)), int(Tk.winfo_screenwidth(self) * 0.5 - self.width * 0.5), 0 + int(Tk.winfo_screenwidth(self) * 0.50 - self.height)))
+        self.geometry()
+        self.iconbitmap('boids.ico')
+        self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
         
-        draw.ellipse(
-                [self.position.x - self.__radius,
-                self.position.y - self.__radius,
-                self.position.x + self.__radius,
-                self.position.y + self.__radius],
-                fill=self.fill_color,
-                width=self.border_width,
-                outline=self.border_color)
-       
-        # self.tki = ImageTk.PhotoImage(canvas)
-        # label["image"] = self.tki
+        self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
+        self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
+        self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
+        self.__gui.main_panel.visual_param_panel.show_fov_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_fov)
+        
+        
+        self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
+        self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
+        self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
+        self.__gui.main_panel.control_panel.start_stop_button.bind('<Button-1>', self.toggle_simulation)
+        self.__gui.main_panel.control_panel.next_button.bind('<Button-1>', self.tick_simulation)
+        self.__gui.main_panel.control_panel.reset_button.bind('<Button-1>', self.reset_simulation)
+        self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
 
-    @abstractmethod
-    def tick(self, time):
-        pass
-    
-class SteeringBehavior():
-    def __init__(self, target_entity:Entity=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
-        self.__attraction_repulsion_force = attraction_repulsion_force
-        self.__distance_to_target = distance_to_target
-        self.__resulting_direction = None
-        self.__target_entity = target_entity
+        self.tick()
+                
+        self.mainloop()
 
-    @abstractmethod    
-    def behave(self, origin_entity:Entity):
-        pass  
-    
-    @property
-    def attraction_repulsion_force(self):
-        return self.__attraction_repulsion_force
+    def param_changed(self, event):
+        self.reset_simulation()
 
     @property
-    def target_entity(self):
-        return self.__target_entity
-    
-    @target_entity.setter
-    def target_entity(self, target_entity):
-        self.__target_entity = target_entity
-    
+    def size(self):
+        return self.__size
 
-class Seek(SteeringBehavior):
-    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=1, distance_to_target=None):
-        SteeringBehavior.__init__(self, target_entity, attraction_repulsion_force, distance_to_target)
+    def tick_simulation(self, event=None):
+        self.__simulation.tick(time=0.1)
+        
+    def reset_simulation(self, event=None) -> None:
+        key = self.__gui.main_panel.param_panel.param_selected
+        self.__simulation.reset(key)
 
-    def behave(self, origin_entity: Entity) -> Vect2D:
-        if self.target_entity is not None:
-            if isinstance(self.target_entity, Entity):
-                desired_speed = (self.target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
-                return desired_speed - origin_entity.speed * self.attraction_repulsion_force
-            elif self.target_entity.x != -1 and self.target_entity.y != -1:
-                desired_speed = (self.target_entity - origin_entity.position).normalized * origin_entity.max_speed
-                return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
-            else: 
-                return Vect2D(0, 0)
+    def tick(self):
+        if self.__simulation.is_running:
+            self.tick_simulation()
+        self.__gui.view_window.update_view(self.__simulation)
+        self.after(10, self.tick)
+        
+    def toggle_simulation(self, event):
+        self.__simulation.toggle_running(event)
+        if self.__simulation.is_running:
+            self.__gui.main_panel.control_panel.start_stop_button.config(text="Stop")
+            self.__gui.main_panel.control_panel.next_button.config(state="disabled")
         else:
-            return Vect2D(0,0)
+            self.__gui.main_panel.control_panel.start_stop_button.config(text="Start")
+            self.__gui.main_panel.control_panel.next_button.config(state="normal")
             
-class Wander(Seek):
-    def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force=1):
-        super().__init__(attraction_repulsion_force=attraction_repulsion_force)
-        """radius will increase the turning distance
-        circle_distance will increase the distance before turning
-        """        
-        self.__circle_distance = circle_distance
-        self.__radius = radius
-        self.__is_in = is_in
-        self.__circle_center = None
-   
-   
-    def behave(self, origin_entity: Entity)->Vect2D:     
-        """Returns a vector that points in a random direction
-
-        Args:
-            origin_entity (Entity): the sprite that is wandering
-
-        Returns:
-            Vect2D: displacement vector
-        """        
-         
-        circle_center_sprite_relative = origin_entity.speed.normalized * self.__circle_distance
-        self.__circle_center = origin_entity.position + circle_center_sprite_relative
-        displacement = Vect2D.from_random_normalized()
-        
-        if self.__is_in:
-            displacement *= random.random() * self.__radius
-        else:
-            displacement *= self.__radius
-            
-        self.target_entity = self.__circle_center + displacement
-        
-        return super().behave(origin_entity)
-        
-        
-    def draw(self, draw):
-        draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="cyan")
-        draw.ellipse([self.target_entity.x - 5, self.target_entity.y - 5, self.target_entity.x + 5, self.target_entity.y + 5], fill="cyan")
-        
-        
-        
+                   
+    # APP getters #    
     @property
-    def circle_distance(self):
-        return self.__circle_distance
-    
+    def width(self):
+        return self.__size.x
+
     @property
-    def radius(self):
-        return self.__radius
-        
-class PseudoWander(SteeringBehavior):
-    def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
-        super().__init__()
-        """radius will increase the turning distance
-        circle_distance will increase the distance before turning
-        angle_change will increase the turning rate
-        """        
-        self.__circle_distance = circle_distance
-        self.__radius = radius
-        self.__angle_change = angle_change
-        self.__on_or_in = False
-        self.__wander_angle = random.random() * 2 * math.pi
-        
-    def setAngle(self, vector:Vect2D, angle:float)->Vect2D:
-        length = vector.length
-        vector.x = math.cos(angle) * length
-        vector.y = math.sin(angle) * length
-        return vector
-        
-    def behave(self, origin_entity: Entity)->Vect2D:     
-        """Retruns a vector that points in a random direction
+    def height(self):
+        return self.__size.y
 
-        Args:
-            origin_entity (Entity): the sprite that is wandering
-
-        Returns:
-            Vect2D: displacement vector
-        """        
-         
-        circle_center = origin_entity.speed.copy()
-        circle_center.normalize()
-        circle_center *= self.__circle_distance
-        
-        displacement = Vect2D.from_random_normalized()
-        displacement *= self.__radius
-        
-        self.setAngle(displacement, self.__wander_angle)
-        
-        self.__wander_angle += (random.random() * self.__angle_change) - (self.__angle_change * .5)
-        
-        desired_speed = circle_center + displacement
-        
-        return desired_speed - origin_entity.speed
-        
-        
-class Flee(Seek):
-    def __init__(self, target_entity:Entity=None, attraction_repulsion_force=-1):
-        super().__init__(target_entity, attraction_repulsion_force)
-        
-    def behave(self, origin_entity: Entity)-> Vect2D:
-        return super().behave(origin_entity)  
-    
-class Pursuit(SteeringBehavior):
-    def __init__(self, target_entity:Entity=None, ratio:int = 1, attraction_repulsion_force:int=1):
-        super().__init__(target_entity, attraction_repulsion_force=attraction_repulsion_force)
-        self.__ratio = ratio
-        
-    def behave(self, origin_entity: Entity) -> Vect2D:
-        if self.target_entity is not None:
-            estimated_position = self.target_entity.position + self.target_entity.speed  * self.__ratio 
-            desired_speed = (estimated_position - origin_entity.position).normalized * origin_entity.max_speed
-            return (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
-        
-            
-class BorderRepulsion(SteeringBehavior):
-    def __init__(self, attraction_repulsion_force=5000, sim_dim:Vect2D=None):       
-        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
-        self.__sim_dim = sim_dim
-
-    def behave(self, origin_entity:Entity):
-        force = self.attraction_repulsion_force
-
-        distance_from_left = origin_entity.position.x - origin_entity.width / 2
-        distance_from_right = self.__sim_dim.x - origin_entity.position.x - origin_entity.width / 2
-        distance_from_top = origin_entity.position.y - origin_entity.height / 2
-        distance_from_bottom = self.__sim_dim.y - origin_entity.position.y - origin_entity.height / 2
-
-        repulsive_force_left = round((Vect2D(force, 0))/(distance_from_left) ** 2, 0) if distance_from_left > 0 else Vect2D(force, 0)
-        repulsive_force_right = round((Vect2D(-force, 0))/(distance_from_right) ** 2, 0) if distance_from_right > 0 else Vect2D(-force, 0)
-        repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 2, 2) if distance_from_top > 0 else Vect2D(0, force)
-        repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 2, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
-        return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
-
-
-                     
-class Evade(Pursuit):
-    def __init__(self, target_entity:Entity=None, ratio:int = 1, attraction_repulsion_force:int=-1):
-        super().__init__(target_entity, ratio, attraction_repulsion_force)
-        
-    def behave(self, origin_entity: Entity)-> Vect2D:
-        return super().behave(origin_entity)  
-    
-            
-
-           
-class Piloted():
-    def __init__(self, max_steering_force:int, slowing_distance:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
-        self.__max_steering_force = max_steering_force
-        self.__slowing_distance = slowing_distance
-        self.steering_force = steering_force
-        self.__steering_behaviors = steering_behaviors
-
-    def steer(self):
-        if self.__steering_behaviors is not None:
-            for steering_behavior in self.__steering_behaviors:
-                self.steering_force += steering_behavior.behave(origin_entity=self)
-
-        self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
-        
-    
-    @property
-    def steering_force(self):
-        return self.__steering_force
-    
-    @property
-    def steering_behaviors(self):
-        return self.__steering_behaviors
-
-    @steering_force.setter
-    def steering_force(self, steering_force):
-        self.__steering_force = steering_force
-        
-class DynamicCircle(Circle, Movable, Piloted):
-    def __init__(   self,
-                    border_color=RGBAColor(randomize=True),
-                    border_width=5,
-                    fill_color=RGBAColor(randomize=True),
-                    position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
-                    radius=random.randint(10, 50),
-                    acceleration=Vect2D(0,0),
-                    speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
-                    max_speed= 100,
-                    max_steering_force=5,
-                    slowing_distance=10,
-                    steering_force=Vect2D(0,0),
-                    steering_behaviors=None,
-                ):
-    
-        Circle.__init__(self, border_color, border_width, fill_color, position, radius)
-        Movable.__init__(self, acceleration, max_speed, speed)
-        Piloted.__init__(self, max_steering_force, slowing_distance, steering_force, steering_behaviors)
-        
-    def draw(self, draw):
-        Circle.draw(self, draw)
-        # draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
-        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 5 + self.position.x), abs(self.steering_force.y * 5 + self.position.y)], fill="green", width=5)
-        
-        # for steering_behavior in self.steering_behaviors:
-        #     # if isinstance(steering_behavior, Wander):
-        #     if hasattr(steering_behavior, "draw"):
-        #         steering_behavior.draw(draw)
-
-    def draw_circle_speed(self, draw):
-        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
-        
-    def draw_circle_steering_force(self, draw):
-        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
-        for steering_behavior in self.steering_behaviors:
-            if hasattr(steering_behavior, "draw"):
-                    steering_behavior.draw(draw)
-                    
-    def draw_fov(self, draw):
-        pass
-
-    def move(self, time):
-        Movable.move(self, time)
-
-    def tick(self, time):
-        self.steer()
-        self.move(time)
-    
 def main():
     App()
 
