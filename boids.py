@@ -399,8 +399,6 @@ class TrackingSensor(Drawable):
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
         self.__range = range
-        self.__vector = vector
-        self.__vector.set(self.__owner.speed.x, self.__owner.speed.y)
 
     def track(self, simulation):
         for sprite in simulation.sprites:
@@ -423,8 +421,8 @@ class TrackingSensor(Drawable):
                 self.__owner.position.y - self.__owner.radius - self.__range,
                 self.__owner.position.x + self.__owner.radius  + self.__range,
                 self.__owner.position.y + self.__owner.radius  + self.__range],
-                start=self.__vector.orientation_degrees - self.__fov,
-                end=self.__vector.orientation_degrees + self.__fov,
+                start=self.__owner.speed.orientation_degrees - self.__fov,
+                end=self.__owner.speed.orientation_degrees + self.__fov,
                 width=self.border_width,
                 outline=self.border_color)
        
