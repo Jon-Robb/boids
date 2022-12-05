@@ -360,8 +360,7 @@ class Piloted():
     def steer(self):
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
-                self.steering_force += steering_behavior.behave(origin_entity=self)
-
+                self.steering_force.set(self.steering_force.x + steering_behavior.behave(origin_entity=self).x, self.steering_force.y + steering_behavior.behave(origin_entity=self).y)
         self.steering_force.set_polar(length= Utils.clamp_max(self.steering_force.length, self.__max_steering_force), orientation=self.steering_force.orientation)
         
     
@@ -393,27 +392,57 @@ class Updatable():
 # |  `----.|  `--'  | |  |  |  | |  |      |  `--'  | |  |\   | |  |____ |  |\   |     |  |    .----)   |   
 #  \______| \______/  |__|  |__| | _|       \______/  |__| \__| |_______||__| \__|     |__|    |_______/    
                                                                                                           
-class TrackingSensor(Drawable):
-    def __init__(self, owner:type['Entity'], fov:float=45, range:float=50, vector:Vect2D=Vect2D()):
+class Brain():
+    def __init__(self, owner, environment, behavior_patterns=None):
+        self.__owner = owner
+        self.__environment = environment
+
+        if behavior_patterns is None:
+            self.__behavior_patterns = { "DynamicCircle": Seek }
+        else: self.__behavior_patterns = behavior_patterns
+
+        self.__seen_entities = []
+        self.__behaviors = []
+
+    def process(self):
+        self.__seen_entities = []
+        self.behaviors = []
+        for eye in self.__owner.eyes:
+            self.__seen_entities = eye.look(self.__environment)
+
+        for seen_entity in self.__seen_entities:
+            self.__behaviors.append(self.__behavior_patterns[seen_entity.__class__.__name__](seen_entity))
+
+    def behave(self):
+        for behavior in self.__behaviors:
+            self.__owner.steering_force.set(behavior.behave(origin_entity=self.__owner).x, behavior.behave(origin_entity=self.__owner).y)
+
+        self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
+
+class Eye(Drawable):
+    def __init__(self, owner:type['Entity'], fov:float=45, range:float=50, vector:Vect2D=None):
         self.__owner = owner
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
         self.__range = range
-        self.__vector = owner.speed
+        if vector is None:
+            self.__vector = owner.speed
 
-    def track(self, simulation):
+    def look(self, simulation):
+        seen_sprites = []
         for sprite in simulation.sprites:
-            if sprite is not self.__owner:
-                return self.is_visible(sprite.position)
+            if sprite is not self.__owner and self.sees(sprite):
+                seen_sprites.append(sprite)
+        return seen_sprites
 
-    def is_in_range(self, target:Vect2D)->bool:
-        return self.__owner.position.distance_to(target) <= self.__range
+    def is_in_range(self, target_position:Vect2D)->bool:
+        return self.__owner.position.distance_from(target_position) <= self.__range
 
     def is_in_fov(self, target_position:Vect2D)->bool:
-        return self.__owner.position.angle_to(target_position) <= self.__fov
+        return self.__vector.angle_between_degrees(target_position) <= self.__fov
 
-    def is_visible(self, target_position:Vect2D)->bool:
-        return self.is_in_range(target_position) and self.is_in_fov(target_position)
+    def sees(self, target:type['Entity'])->bool:
+        return self.is_in_range(target.position) and self.is_in_fov(target.position)
 
     def draw(self, draw):
         
@@ -558,15 +587,24 @@ class DynamicCircle(Circle, Movable, Piloted):
         self.steer()
         self.move(time)
 
-class DynamicSeeingCircle(DynamicCircle):
-    def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100):
+class SentinentCircle(DynamicCircle):
+    def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100, environment=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors)
-        
-        self.__tracking_sensors = [TrackingSensor(self),]
+
+        self.__brain = Brain(self, environment)
+        self.__eyes = [Eye(self),]
+
+    def tick(self, time):
+        DynamicCircle.tick(self, time)
+        self.__brain.process()
 
     def draw_fov(self, draw):
-        for tracking_sensor in self.__tracking_sensors:
-            tracking_sensor.draw(draw)    
+        for eye in self.__eyes:
+            eye.draw(draw)    
+
+    @property
+    def eyes(self):
+        return self.__eyes
 
 class Simulation(Updatable):
     def __init__(self, size=Vect2D(100,100)):
@@ -670,7 +708,7 @@ class Simulation(Updatable):
                     if i%2 == 0 and i != len(self.__sprites) - 1:
                         self.__sprites[i].steering_behaviors.append(Evade(self.__sprites[i+1]))
 
-                self.__sprites.append(DynamicSeeingCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)]))
+        self.__sprites.append(SentinentCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self))
 
     def tick(self, time):
         if self.__sprites:
