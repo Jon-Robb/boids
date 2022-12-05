@@ -328,7 +328,7 @@ class Movable():
 
 
     def move(self, time):
-        self.position += self.speed * time + self.acceleration * 0.5 ** 2 * time
+        self.position.set(self.position.x + self.speed.x * time + self.acceleration.x * 0.5 ** 2 * time, self.position.y + self.speed.y * time + self.acceleration.y * 0.5 ** 2 * time)
         self.speed.set(self.speed.x + self.steering_force.x, self.speed.y + self.steering_force.y)
         
         self.speed.clamp_x(-self.max_speed, self.max_speed)
@@ -541,10 +541,12 @@ class DynamicCircle(Circle, Movable, Piloted):
         #         steering_behavior.draw(draw)
 
     def draw_circle_speed(self, draw):
-        draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
+        draw.line([self.position.x, self.position.y, self.position.x + self.speed.x, self.position.y + self.speed.y], fill="red", width=5)
+        # draw.line([self.position.x, self.position.y, abs(self.speed.x + self.position.x), abs(self.speed.y + self.position.y)], fill="red", width=5)
         
     def draw_circle_steering_force(self, draw):
-        draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
+        draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
+        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
@@ -668,7 +670,7 @@ class Simulation(Updatable):
                     if i%2 == 0 and i != len(self.__sprites) - 1:
                         self.__sprites[i].steering_behaviors.append(Evade(self.__sprites[i+1]))
 
-                self.__sprites.append(DynamicSeeingCircle(steering_behaviors=[BorderRepulsion(sim_dim=self.__size)]))
+                self.__sprites.append(DynamicSeeingCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)]))
 
     def tick(self, time):
         if self.__sprites:
