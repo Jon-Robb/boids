@@ -365,6 +365,10 @@ class Piloted():
         
     
     @property
+    def max_steering_force(self):
+        return self.__max_steering_force
+
+    @property
     def steering_force(self):
         return self.__steering_force
     
@@ -398,7 +402,7 @@ class Brain():
         self.__environment = environment
 
         if behavior_patterns is None:
-            self.__behavior_patterns = { "DynamicCircle": Seek }
+            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 10000 } }
         else: self.__behavior_patterns = behavior_patterns
 
         self.__seen_entities = []
@@ -411,16 +415,19 @@ class Brain():
             self.__seen_entities = eye.look(self.__environment)
 
         for seen_entity in self.__seen_entities:
-            self.__behaviors.append(self.__behavior_patterns[seen_entity.__class__.__name__](seen_entity))
+            behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
+            self.__behaviors.append(behavior(seen_entity, attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
+        
+        self.behave()
 
     def behave(self):
         for behavior in self.__behaviors:
-            self.__owner.steering_force.set(behavior.behave(origin_entity=self.__owner).x, behavior.behave(origin_entity=self.__owner).y)
+                self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
 
-        self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
+        #self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
 
 class Eye(Drawable):
-    def __init__(self, owner:type['Entity'], fov:float=45, range:float=50, vector:Vect2D=None):
+    def __init__(self, owner:type['Entity'], fov:float=15, range:float=25, vector:Vect2D=None):
         self.__owner = owner
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
@@ -435,14 +442,15 @@ class Eye(Drawable):
                 seen_sprites.append(sprite)
         return seen_sprites
 
-    def is_in_range(self, target_position:Vect2D)->bool:
-        return self.__owner.position.distance_from(target_position) <= self.__range
+    def is_in_range(self, target:Vect2D)->bool:
+        return self.__owner.position.distance_from(target.position) - target.radius <= self.__range
 
-    def is_in_fov(self, target_position:Vect2D)->bool:
-        return self.__vector.angle_between_degrees(target_position) <= self.__fov
+    def is_in_fov(self, target:Vect2D)->bool:
+        # return True
+        return self.__owner.position.angle_between_degrees(target.position) <= self.__fov
 
     def sees(self, target:type['Entity'])->bool:
-        return self.is_in_range(target.position) and self.is_in_fov(target.position)
+        return self.is_in_range(target) and self.is_in_fov(target)
 
     def draw(self, draw):
         
@@ -1050,6 +1058,7 @@ class App(Tk, Updatable):
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
         self.__gui.main_panel.control_panel.start_stop_button.bind('<Button-1>', self.toggle_simulation)
         self.__gui.main_panel.control_panel.next_button.bind('<Button-1>', self.tick_simulation)
+        self.__gui.main_panel.control_panel.next_button.bind('<space>', self.tick_simulation)
         self.__gui.main_panel.control_panel.reset_button.bind('<Button-1>', self.reset_simulation)
         self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
 
