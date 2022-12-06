@@ -704,7 +704,7 @@ class Simulation(Updatable):
                 
         match key:
             case 'Seek, Flee or Wander':
-                nb_balls = 25
+                nb_balls = 250
                 for i in range(nb_balls):
                     self.__sprites.append(DynamicCircle(    border_color=RGBAColor(randomize=True),
                                                             border_width=5,
@@ -946,6 +946,19 @@ class ViewWindow(ttk.Label, Drawable):
             i = Image.new('RGBA', (int(self.width), int(self.height)), (0, 0, 0))
             draw = ImageDraw.Draw(i)
             
+            # for sprite in simulation.sprites:
+            #     if self.__speed_is_drawn:
+            #         sprite.draw_circle_speed(draw)
+                    
+            #     if self.__steering_force_is_drawn:
+            #         sprite.draw_circle_steering_force(draw)
+                    
+            #     if self.__circle_is_drawn:
+            #         sprite.draw(draw)
+                    
+            #     if self.__fov_is_drawn:
+            #         if hasattr(sprite, 'draw_fov'):
+            #             sprite.draw_fov(draw)   
             
             if self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
