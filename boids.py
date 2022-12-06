@@ -867,9 +867,10 @@ class GUI(ttk.Frame, Drawable):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar()
-        self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)   
-        self.__main_panel.grid(row=0, column=0, rowspan=3, sticky='nsew')
-        self.__view_window.grid(row=0, column=1, rowspan=3, sticky="nsew") 
+        # self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)
+        self.__view_window = ViewWindow(size=Vect2D(size.x, size.y), fill_color=fill_color)
+        self.__main_panel.grid(row=0, column=1)
+        self.__view_window.grid(row=0, column=1, rowspan=4, sticky="ns")
 
     @property
     def main_panel(self):
@@ -885,9 +886,11 @@ class ControlBar(ttk.Frame):
         self.__control_panel = StartStopPanel("Control")
         self.__param_panel = ParamPanel("Paramètre")
         self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
-        self.__control_panel.grid(row=0, column=0)
-        self.__param_panel.grid(row=1, column=0)
-        self.__visual_param_panel.grid(row=2, column=0)
+        self.__Info_panel = InfoPanel("Info")
+        self.__control_panel.grid(row=0, column=0, sticky="N")
+        self.__param_panel.grid(row=1, column=0, sticky="N")
+        self.__visual_param_panel.grid(row=2, column=0, sticky="N")
+        self.__Info_panel.grid(row=3, column=0, sticky="N")
 
     @property
     def param_panel(self):
@@ -907,9 +910,9 @@ class StartStopPanel(ttk.LabelFrame):
         self.__start_stop_button = ttk.Button(self, text="Stop")
         self.__next_button = ttk.Button(self, text="Next Step", state="disabled")
         self.__reset_button = ttk.Button(self, text="Reset")
-        self.__start_stop_button.pack()
-        self.__next_button.pack()
-        self.__reset_button.pack()
+        self.__start_stop_button.grid(row=0, column=0)
+        self.__next_button.grid(row=1, column=0)
+        self.__reset_button.grid(row=2, column=0)
         
     @property
     def start_stop_button(self):
@@ -922,6 +925,23 @@ class StartStopPanel(ttk.LabelFrame):
     @property
     def reset_button(self):
         return self.__reset_button
+
+class InfoPanel(ttk.LabelFrame):
+    def __init__(self, text):
+        ttk.LabelFrame.__init__(self, root=None, text=text)
+        self.__info_label = tk.Text(self, width=30, height=10)
+        self.set_text("Info")
+        self.__info_label.grid(row=0, column=0)
+
+    @property
+    def info_label(self):
+        return self.__info_label
+    
+    def set_text(self, text):
+        self.__info_label.config(state=tk.NORMAL)
+        self.__info_label.delete(1.0, tk.END)
+        self.__info_label.insert(tk.END, text)
+        self.__info_label.config(state=tk.DISABLED)
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
