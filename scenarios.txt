@@ -2,3 +2,4 @@ Predator Chasing Prey
 Follow the leader
 Seek, Flee or Wander
 Seek or Flee Mouse
+Cohesion

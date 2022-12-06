@@ -71,6 +71,13 @@ class RGBAColor():
     @property
     def rgba(self):
         return (self.__r, self.__g, self.__b, self.__a)
+    
+    @rgba.setter
+    def rgba(self, rgba):
+        self.r = rgba[0]
+        self.g = rgba[1]
+        self.b = rgba[2]
+        self.a = rgba[3]
 
         
     def randomize_color(self):
@@ -469,8 +476,8 @@ class Brain():
         self.__environment = environment
 
         if behavior_patterns is None:
-            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 10000 }, 
-                                         "SentientCircle": { "Behavior": Seek, "Force" : 10000 },
+            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : -1, "sense_coloration" : RGBAColor(255,128,0,255) }, 
+                                         "SentientCircle": { "Behavior": Seek, "Force" : 1, "sense_coloration" : RGBAColor(73,166,182,255) },
                                          "Default": { "Behavior": Evade, "Force" : 10000 }
                                          }
         else: self.__behavior_patterns = behavior_patterns
@@ -478,7 +485,7 @@ class Brain():
         self.__seen_entities = []
         self.__active_behaviors = []
 
-    def process(self):
+    def process(self, draw=None):
         self.__seen_entities = []
         self.__active_behaviors = []
         for eye in self.__owner.eyes:
@@ -487,17 +494,24 @@ class Brain():
         for seen_entity in self.__seen_entities:
             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
             self.__active_behaviors.append(behavior([seen_entity], attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
-        
+            test = self.__behavior_patterns[seen_entity.__class__.__name__]["sense_coloration"]
+            # seen_entity.fill_color = RGBAColor(self.__behavior_patterns[seen_entity.__class__.__name__]["sense_coloration"])
         self.behave()
 
+    def draw_line_to_seen_entities(self, draw):
+        halo_radius = self.__owner.radius * 1.25
+        for seen_entity in self.__seen_entities:
+            draw.ellipse([self.__owner.position.x - halo_radius, self.__owner.position.y -  halo_radius, self.__owner.position.x +  halo_radius, self.__owner.position.y +  halo_radius], fill="cyan")
+            draw.line([self.__owner.position.x, self.__owner.position.y, seen_entity.position.x, seen_entity.position.y], fill="cyan", width=5)
+            
     def behave(self):
         for behavior in self.__active_behaviors:
                 self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
 
-        #self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
+        self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
 
 class Eye(Drawable):
-    def __init__(self, owner:type['Entity'], fov:float=15, range:float=100, vector:Vect2D=None):
+    def __init__(self, owner:type['Entity'], fov:float=120, range:float=50, vector:Vect2D=None):
         self.__owner = owner
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
@@ -516,8 +530,9 @@ class Eye(Drawable):
         return self.__owner.position.distance_from(target.position) - target.radius <= self.__range
 
     def is_in_fov(self, target:Vect2D)->bool:
-        # return True
-        return self.__owner.position.angle_between_degrees(target.position) <= self.__fov
+        distance_to_target = self.__owner.position - target.position
+        print(distance_to_target.angle_between_degrees(self.__vector))
+        return self.__vector.angle_between_degrees(distance_to_target) <= self.__fov
 
     def sees(self, target:type['Entity'])->bool:
         return self.is_in_range(target) and self.is_in_fov(target)
@@ -603,7 +618,7 @@ class Circle(Entity):
         self.__radius = radius
 
     def draw(self, draw):
-        
+        self.fill_color
         draw.ellipse(
                 [self.position.x - self.__radius,
                 self.position.y - self.__radius,
@@ -681,6 +696,7 @@ class SentientCircle(DynamicCircle):
     def draw_fov(self, draw):
         for eye in self.__eyes:
             eye.draw(draw)    
+        self.__brain.draw_line_to_seen_entities(draw)
 
     @property
     def eyes(self):
@@ -767,6 +783,23 @@ class Simulation(Updatable):
                         sprite.steering_behaviors.append(Pursuit([self.__sprites[i-1]]))
                         sprite.radius = (nb_balls - i - 1) * 2
                     else: sprite.radius = nb_balls * 2
+                    
+            case 'Cohesion':
+                nb_balls = 10
+                for i in range(nb_balls):
+                                self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(10, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            slowing_distance=10,
+                                                            steering_force=Vect2D(0,0),
+                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size), Wander()], environment=self))
+        
 
             case 'Predator Chasing Prey': # Default
                 nb_balls = 6
@@ -788,20 +821,6 @@ class Simulation(Updatable):
                     if i%2 == 0 and i != len(self.__sprites) - 1:
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
-        for _ in range(2):
-            self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
-                                                            border_width=5,
-                                                            fill_color=RGBAColor(randomize=True),
-                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
-                                                            radius=random.randint(10, 50),
-                                                            acceleration=Vect2D(0,0),
-                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
-                                                            max_speed= 100,
-                                                            max_steering_force=5,
-                                                            slowing_distance=10,
-                                                            steering_force=Vect2D(0,0),
-                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size), Wander()], environment=self))
-        
 
         # self.__sprites.append(SentientCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self, positsteering_behaviors=ion=Vect2D(random.randrange(0,1000),random.randrange(0,500))))
 
