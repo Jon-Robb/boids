@@ -946,6 +946,7 @@ class ViewWindow(ttk.Label, Drawable):
             i = Image.new('RGBA', (int(self.width), int(self.height)), (0, 0, 0))
             draw = ImageDraw.Draw(i)
             
+            
             if self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
@@ -963,8 +964,9 @@ class ViewWindow(ttk.Label, Drawable):
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
                         sprite.draw_fov(draw)                    
-                    sprite.draw(draw)
+                    sprite.draw_circle_speed(draw)
                     sprite.draw_circle_steering_force(draw)
+                    
             elif self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     sprite.draw_circle_steering_force(draw)
@@ -1016,9 +1018,7 @@ class ViewWindow(ttk.Label, Drawable):
             elif not self.__speed_is_drawn and not self.__steering_force_is_drawn and not self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
-                        sprite.draw_fov(draw)        
-           
-               
+                        sprite.draw_fov(draw)                       
         
             self.__image_tk = ImageTk.PhotoImage(i)
             self.__image_label["image"] = self.__image_tk
