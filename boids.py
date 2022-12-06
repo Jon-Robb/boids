@@ -77,7 +77,7 @@ class SteeringBehavior():
     def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
-        self.__resulting_direction = None
+        self.__resulting_direction = Vect2D(0, 0)
         self.__target_entities = [] if target_entities is None else target_entities
 
     @abstractmethod    
@@ -87,6 +87,14 @@ class SteeringBehavior():
     @property
     def attraction_repulsion_force(self):
         return self.__attraction_repulsion_force
+    
+    @property
+    def resulting_direction(self):
+        return self.__resulting_direction
+    
+    @resulting_direction.setter
+    def resulting_direction(self, resulting_direction):
+        self.__resulting_direction = resulting_direction
 
     @property
     def target_entities(self):
@@ -235,8 +243,9 @@ class Pursuit(SteeringBehavior):
                 sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
             
-class BorderRepulsion(SteeringBehavior):
-    def __init__(self, attraction_repulsion_force=5000, sim_dim:Vect2D=None):       
+class BorderRepulsion(SteeringBehavior): 
+
+    def __init__(self, attraction_repulsion_force=50000, sim_dim:Vect2D=None):       
         SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
         self.__sim_dim = sim_dim
 
@@ -253,7 +262,31 @@ class BorderRepulsion(SteeringBehavior):
         repulsive_force_top = round((Vect2D(0, force))/(distance_from_top) ** 2, 2) if distance_from_top > 0 else Vect2D(0, force)
         repulsive_force_bottom = round((Vect2D(0, -force))/(distance_from_bottom) ** 2, 0) if distance_from_bottom > 0 else Vect2D(0, -force)
         return repulsive_force_left + repulsive_force_right + repulsive_force_top + repulsive_force_bottom
-             
+  
+  
+class EntityRepulsion(SteeringBehavior):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
+        SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
+    
+        self.__target_entities = target_entities
+    def behave(self, origin_entity:type['Entity']):
+        force = self.attraction_repulsion_force
+        for target_entity in self.__target_entities:
+            if target_entity is not origin_entity:
+                if isinstance(target_entity, Entity):
+                    orientation = (origin_entity.position - target_entity.position).normalized
+                    distance = (origin_entity.position - target_entity.position).length - origin_entity.radius - target_entity.radius
+                elif isinstance(target_entity, Vect2D):
+                    orientation = (origin_entity.position - target_entity).normalized
+                    distance = (origin_entity.position - target_entity).length - origin_entity.radius
+                
+                self.resulting_direction += orientation/distance ** 2 * force
+                
+        return self.resulting_direction
+            
+        
+        
+        
 class Evade(Pursuit):
     def __init__(self, target_entity:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=-1):
         super().__init__(target_entity, ratio, attraction_repulsion_force)
@@ -415,32 +448,35 @@ class Brain():
         self.__environment = environment
 
         if behavior_patterns is None:
-            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 100 } }
+            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 10000 }, 
+                                         "SentientCircle": { "Behavior": Seek, "Force" : 10000 },
+                                         "Default": { "Behavior": Evade, "Force" : 10000 }
+                                         }
         else: self.__behavior_patterns = behavior_patterns
 
         self.__seen_entities = []
-        self.__behaviors = []
+        self.__active_behaviors = []
 
     def process(self):
         self.__seen_entities = []
-        self.behaviors = []
+        self.__active_behaviors = []
         for eye in self.__owner.eyes:
             self.__seen_entities = eye.look(self.__environment)
 
         for seen_entity in self.__seen_entities:
             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
-            self.__behaviors.append(behavior(seen_entity, attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
+            self.__active_behaviors.append(behavior(seen_entity, attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
         
         self.behave()
 
     def behave(self):
-        for behavior in self.__behaviors:
-            self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
+        for behavior in self.__active_behaviors:
+                self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
 
         #self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
 
 class Eye(Drawable):
-    def __init__(self, owner:type['Entity'], fov:float=15, range:float=25, vector:Vect2D=None):
+    def __init__(self, owner:type['Entity'], fov:float=15, range:float=100, vector:Vect2D=None):
         self.__owner = owner
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
@@ -608,11 +644,13 @@ class DynamicCircle(Circle, Movable, Piloted):
         self.steer()
         self.move(time)
 
-class SentinentCircle(DynamicCircle):
+class SentientCircle(DynamicCircle):
     def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100, environment=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors)
 
         self.__brain = Brain(self, environment)
+        _id = id(self.__brain)
+        
         self.__eyes = [Eye(self),]
 
     def tick(self, time):
@@ -729,7 +767,23 @@ class Simulation(Updatable):
                     if i%2 == 0 and i != len(self.__sprites) - 1:
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
-        self.__sprites.append(SentinentCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self))
+        for _ in range(2):
+            self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(10, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            slowing_distance=10,
+                                                            steering_force=Vect2D(0,0),
+                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size), Wander()], environment=self))
+        
+        for sprite in self.__sprites:
+            sprite.steering_behaviors.append(EntityRepulsion(self.__sprites, attraction_repulsion_force=5000))
+        # self.__sprites.append(SentientCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self, positsteering_behaviors=ion=Vect2D(random.randrange(0,1000),random.randrange(0,500))))
 
     def tick(self, time):
         if self.__sprites:
