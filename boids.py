@@ -18,6 +18,10 @@ import math
 
                                                                                                                                                    
 class Utils():
+    """
+    This class contains two static methods. One is used to clamp a value between a min and max value and
+    one  is used to reads a file and returns a list of strings to populate the scenario combobox.
+    """          
 
     def clamp_max(value, max):
         return min(value, max)
@@ -30,6 +34,15 @@ class Utils():
         return data
 
 class RGBAColor():
+
+
+    """
+    This class is used to create a color object that can be used to draw shapes on the image.
+    It can be used to create a random color or a specific color. To create a random color, use the
+    randomize_color() method. To create a specific color, use the RGBAColor(r, g, b, a) constructor.
+    """
+
+
     def __init__(self, r:int=255, g:int=255, b:int=255, a:int=255, randomize:bool=False):
         self.__r = r
         self.__g = g
@@ -65,7 +78,7 @@ class RGBAColor():
         self.__g = random.randint(0, 255)
         self.__b = random.randint(0, 255)
         self.__a = random.randint(0, 255)
-
+    """randomize_color() returns None and randomizes the color values of the object."""
 #      _______.___________. _______  _______ .______       __  .__   __.   _______    .______    _______  __    __       ___   ____    ____  __    ______   .______          _______.
 #     /       |           ||   ____||   ____||   _  \     |  | |  \ |  |  /  _____|   |   _  \  |   ____||  |  |  |     /   \  \   \  /   / |  |  /  __  \  |   _  \        /       |
 #    |   (----`---|  |----`|  |__   |  |__   |  |_)  |    |  | |   \|  | |  |  __     |  |_)  | |  |__   |  |__|  |    /  ^  \  \   \/   /  |  | |  |  |  | |  |_)  |      |   (----`
@@ -74,6 +87,10 @@ class RGBAColor():
 # |_______/       |__|     |_______||_______|| _| `._____||__| |__| \__|  \______|    |______/  |_______||__|  |__| /__/     \__\  \__/     |__|  \______/  | _| `._____|_______/    
                                                                                                                                                                                    
 class SteeringBehavior():
+    """
+    This class is used to create a steering behavior object that can be used to steer an entity.
+    It is an abstract class. It contains a abstract method called behave() that is used to steer an entity (dynamicCircles).
+    """
     def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force:Vect2D=None, distance_to_target:Vect2D=None):
         self.__attraction_repulsion_force = attraction_repulsion_force
         self.__distance_to_target = distance_to_target
@@ -111,6 +128,11 @@ class SteeringBehavior():
         self.__target_entities.remove(target_entity)
     
 class Seek(SteeringBehavior):
+    """
+    This class is used to create a seek steering behavior object.
+    It is a child class of the SteeringBehavior class.
+    """
+
     def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force=1, distance_to_target=None):
         SteeringBehavior.__init__(self, target_entities, attraction_repulsion_force, distance_to_target)
 
@@ -127,6 +149,7 @@ class Seek(SteeringBehavior):
                         desired_speed = (target_entity - origin_entity.position).normalized * origin_entity.max_speed
                         sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
+     
             
 class Wander(Seek):
     def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force=1):
