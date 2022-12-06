@@ -138,16 +138,14 @@ class Seek(SteeringBehavior):
 
     def behave(self, origin_entity: type['Entity']):
         sum_of_forces = Vect2D(0, 0)
-        #check if target entity is a list or a single entity
-        if hasattr(self.target_entities, "__len__"):
-            for target_entity in self.target_entities:
-                if target_entity is not None:
-                    if isinstance(target_entity, Entity):
-                        desired_speed = (target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
-                        sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
-                    elif isinstance(target_entity, Vect2D) and (target_entity.x != -1 and target_entity.y != -1):
-                        desired_speed = (target_entity - origin_entity.position).normalized * origin_entity.max_speed
-                        sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if isinstance(target_entity, Entity):
+                    desired_speed = (target_entity.position - origin_entity.position).normalized * origin_entity.max_speed
+                    sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
+                elif isinstance(target_entity, Vect2D) and (target_entity.x != -1 and target_entity.y != -1):
+                    desired_speed = (target_entity - origin_entity.position).normalized * origin_entity.max_speed
+                    sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
      
             
@@ -488,7 +486,7 @@ class Brain():
 
         for seen_entity in self.__seen_entities:
             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
-            self.__active_behaviors.append(behavior(seen_entity, attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
+            self.__active_behaviors.append(behavior([seen_entity], attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
         
         self.behave()
 
@@ -804,8 +802,7 @@ class Simulation(Updatable):
                                                             steering_force=Vect2D(0,0),
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size), Wander()], environment=self))
         
-        for sprite in self.__sprites:
-            sprite.steering_behaviors.append(EntityRepulsion(self.__sprites, attraction_repulsion_force=5000))
+
         # self.__sprites.append(SentientCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self, positsteering_behaviors=ion=Vect2D(random.randrange(0,1000),random.randrange(0,500))))
 
     def tick(self, time):
