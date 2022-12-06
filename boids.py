@@ -850,6 +850,11 @@ class Simulation(Updatable):
         
     def toggle_running(self, event):
         self.__is_running = not self.__is_running
+        
+    def check_entity_clicked(self, event):
+        for sprite in reversed(self.__sprites):
+            if sprite.position.x - sprite.radius < event.x < sprite.position.x + sprite.radius and sprite.position.y - sprite.radius < event.y < sprite.position.y + sprite.radius:
+                return sprite
 
     @property
     def sprites(self):
@@ -924,6 +929,10 @@ class ControlBar(ttk.Frame):
     @property
     def visual_param_panel(self):
         return self.__visual_param_panel
+    
+    @property
+    def info_panel(self):
+        return self.__Info_panel
 
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
@@ -1202,6 +1211,8 @@ class App(Tk, Updatable):
         self.__gui.main_panel.control_panel.next_button.bind('<space>', self.tick_simulation)
         self.__gui.main_panel.control_panel.reset_button.bind('<Button-1>', self.reset_simulation)
         self.__gui.main_panel.param_panel.combobox.bind('<<ComboboxSelected>>', self.param_changed)
+        #bind mouse click to image
+        self.__gui.view_window.image_label.bind('<Button-1>', self.mouse_clicked_on_image)
 
         self.tick()
                 
@@ -1213,6 +1224,11 @@ class App(Tk, Updatable):
     @property
     def size(self):
         return self.__size
+    
+    def mouse_clicked_on_image(self, event):
+        clicked_entity = self.__simulation.check_entity_clicked(event)
+        if clicked_entity is not None:
+            self.__gui.main_panel.info_panel.set_text(clicked_entity.position.x)
 
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
