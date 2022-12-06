@@ -813,10 +813,6 @@ class Simulation(Updatable):
                                                             steering_force=Vect2D(0,0),
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size), Wander()], environment=self))
         
-        for sprite in self.__sprites:
-            sprite.steering_behaviors.append(EntityRepulsion(self.__sprites, attraction_repulsion_force=5000))
-        # self.__sprites.append(SentientCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self, positsteering_behaviors=ion=Vect2D(random.randrange(0,1000),random.randrange(0,500))))
-
     def tick(self, time):
         if self.__sprites:
             for sprite in self.__sprites:
