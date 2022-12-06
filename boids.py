@@ -511,7 +511,7 @@ class Brain():
         self.__owner.steering_force.set_polar(length= Utils.clamp_max(self.__owner.steering_force.length, self.__owner.max_steering_force), orientation=self.__owner.steering_force.orientation)     
 
 class Eye(Drawable):
-    def __init__(self, owner:type['Entity'], fov:float=120, range:float=50, vector:Vect2D=None):
+    def __init__(self, owner:type['Entity'], fov:float=45, range:float=100, vector:Vect2D=None):
         self.__owner = owner
         Drawable.__init__(self, border_color=RGBAColor(), border_width=1, fill_color=None, position=self.__owner.position, size=Vect2D(range, range))
         self.__fov = fov
@@ -530,10 +530,12 @@ class Eye(Drawable):
         return self.__owner.position.distance_from(target.position) - target.radius <= self.__range
 
     def is_in_fov(self, target:Vect2D)->bool:
-        distance_to_target = self.__owner.position - target.position
-        print(distance_to_target.angle_between_degrees(self.__vector))
-        return self.__vector.angle_between_degrees(distance_to_target) <= self.__fov
-
+        distance_to_target = target.position - self.__owner.position
+        if distance_to_target.is_defined:
+            return self.__vector.angle_between_degrees(distance_to_target) <= self.__fov
+        else:
+            return False
+        
     def sees(self, target:type['Entity'])->bool:
         return self.is_in_range(target) and self.is_in_fov(target)
 
