@@ -14,8 +14,11 @@ import math
 # |  |  |  |     |  |     |  | |  |     |  |     |  |     |  | |   __|     \   \    
 # |  `--'  |     |  |     |  | |  `----.|  |     |  |     |  | |  |____.----)   |   
 #  \______/      |__|     |__| |_______||__|     |__|     |__| |_______|_______/    
-                                                                                                                                                      
+
+
+                                                                                                                                                   
 class Utils():
+
     def clamp_max(value, max):
         return min(value, max)
     
@@ -113,9 +116,9 @@ class Seek(SteeringBehavior):
 class Wander(Seek):
     def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force=1):
         super().__init__(attraction_repulsion_force=attraction_repulsion_force)
-        """radius will increase the turning distance
+        '''radius will increase the turning distance
         circle_distance will increase the distance before turning
-        """        
+        '''        
         self.__circle_distance = circle_distance
         self.__radius = radius
         self.__is_in = is_in
@@ -123,14 +126,14 @@ class Wander(Seek):
    
    
     def behave(self, origin_entity: type['Entity'])->Vect2D:     
-        """Returns a vector that points in a random direction
+        '''Returns a vector that points in a random direction
 
         Args:
             origin_entity (Entity): the sprite that is wandering
 
         Returns:
             Vect2D: displacement vector
-        """        
+        '''        
          
         circle_center_sprite_relative = origin_entity.speed.normalized * self.__circle_distance
         self.__circle_center = origin_entity.position + circle_center_sprite_relative
@@ -163,10 +166,10 @@ class Wander(Seek):
 class PseudoWander(SteeringBehavior):
     def __init__(self, radius:float=100, circle_distance:float=100, angle_change:float=0.5):
         super().__init__()
-        """radius will increase the turning distance
+        '''radius will increase the turning distance
         circle_distance will increase the distance before turning
         angle_change will increase the turning rate
-        """        
+        '''        
         self.__circle_distance = circle_distance
         self.__radius = radius
         self.__angle_change = angle_change
@@ -180,14 +183,14 @@ class PseudoWander(SteeringBehavior):
         return vector
         
     def behave(self, origin_entity: type['Entity'])->Vect2D:     
-        """Retruns a vector that points in a random direction
+        '''Retruns a vector that points in a random direction
 
         Args:
             origin_entity (Entity): the sprite that is wandering
 
         Returns:
             Vect2D: displacement vector
-        """        
+        '''        
          
         circle_center = origin_entity.speed.copy()
         circle_center.normalize()
@@ -402,7 +405,7 @@ class Brain():
         self.__environment = environment
 
         if behavior_patterns is None:
-            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 10000 } }
+            self.__behavior_patterns = { "DynamicCircle": { "Behavior": Flee, "Force" : 100 } }
         else: self.__behavior_patterns = behavior_patterns
 
         self.__seen_entities = []
