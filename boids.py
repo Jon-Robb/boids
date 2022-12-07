@@ -320,7 +320,7 @@ class Evade(Pursuit):
         return super().behave(origin_entity)
             
 class Cohesion(SteeringBehavior):
-    def __init(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=5000):
         super().__init__(target_entities, attraction_repulsion_force)
 
     def behave(self, origin_entity: type['Entity']):
@@ -489,19 +489,21 @@ class Brain():
         self.__environment = environment
 
         if behavior_patterns is None:
-            self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Flee, "Target_type" : "single", "Force" : -1}, 
-                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "group", "Force" : 50},
-                                            "Unknown": { "Behavior": Evade, "Target_type" : "single", "Force" : 10000 },
-                                            "Default": { "Behavior": Wander, "Target_type" : "none", "Force" : 1 }
+            self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Flee, "Target_type" : "single" }, 
+                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "group" },
+                                            "Unknown": { "Behavior": Evade, "Target_type" : "single" },
+                                            "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
+            self.__permanent_patterns = [BorderRepulsion(sim_dim=environment.size)]
         else: self.__behavior_patterns = behavior_patterns
 
         self.__seen_entities = []
-        self.__active_behaviors = []
+        self.__active_behaviors = self.__permanent_patterns
 
     def process(self):
         self.__seen_entities = []
         self.__active_behaviors = []
+        self.__active_behaviors.extend(self.__permanent_patterns)
         for eye in self.__owner.eyes:
             self.__seen_entities = eye.look(self.__environment)
 
@@ -512,16 +514,16 @@ class Brain():
                     for seen_entity in self.__seen_entities:
                         if self.__behavior_patterns[seen_entity.__class__.__name__] == key:
                             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
-                            self.__active_behaviors.append(behavior([seen_entity], attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
+                            self.__active_behaviors.append(behavior([seen_entity]))
                 elif values["Target_type"] == "group":
                     target_group = []
                     behavior = values["Behavior"]
                     for seen_entity in self.__seen_entities:
                         if seen_entity.__class__.__name__ == key:
                             target_group.append(seen_entity)
-                    self.__active_behaviors.append(behavior(target_group, attraction_repulsion_force=self.__behavior_patterns[seen_entity.__class__.__name__]["Force"]))
+                    self.__active_behaviors.append(behavior(target_group))
         else: 
-            behavior = self.__behavior_patterns["Default"]["Behavior"]
+            behavior = self.__behavior_patterns["No_target"]["Behavior"]
             self.__active_behaviors.append(behavior())
         self.behave()
 
@@ -838,7 +840,9 @@ class Simulation(Updatable):
                                                             max_steering_force=5,
                                                             slowing_distance=10,
                                                             steering_force=Vect2D(0,0),
-                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size)], environment=self))
+                                                            #steering_behaviors=[BorderRepulsion(sim_dim=self.__size)], environment=self
+                                                            environment=self
+                                                            ))
         
 
             case 'Predator Chasing Prey': # Default
