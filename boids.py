@@ -1143,6 +1143,11 @@ class InfoPanel(ttk.LabelFrame):
                                 self.__info_string += "        " + target_entity.name + "\n"
             else:
                 self.__info_string += "    None\n"
+            
+            if self.__info_entity.eyes is not None:
+                self.__info_string += "Sees: " + "\n"
+            # for entity in self.__info_entity.sees:
+            
             self.__set_text(self.__info_string)
         else:
             self.__set_text("Click on a boid to show the infomations about it")
