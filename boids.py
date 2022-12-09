@@ -987,7 +987,7 @@ class ControlBar(ttk.Frame):
         self.__control_panel = StartStopPanel("Control")
         self.__param_panel = ParamPanel("Paramètre")
         self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
-        self.__Info_panel = InfoPanel("Info")
+        self.__Info_panel = InfoPanel("Boid Informations")
         self.__control_panel.grid(row=0, column=0, sticky="N")
         self.__param_panel.grid(row=1, column=0, sticky="N")
         self.__visual_param_panel.grid(row=2, column=0, sticky="N")
@@ -1035,7 +1035,7 @@ class InfoPanel(ttk.LabelFrame):
     def __init__(self, text):
         ttk.LabelFrame.__init__(self, root=None, text=text)
         self.__info_label = tk.Text(self, width=30, height=10)
-        self.set_text("Info")
+        self.set_text("Click on a boid to show the infomations about it")
         self.__info_label.grid(row=0, column=0)
 
     @property
@@ -1272,6 +1272,9 @@ class App(Tk, Updatable):
         self.iconbitmap('boids.ico')
         self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
         
+        self.__info_entity = None
+        self.__info_string = ""
+        
         self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
         self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
         self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
@@ -1303,7 +1306,7 @@ class App(Tk, Updatable):
     def mouse_clicked_on_image(self, event):
         clicked_entity = self.__simulation.check_entity_clicked(event)
         if clicked_entity is not None:
-            self.__gui.main_panel.info_panel.set_text(clicked_entity.position.x)
+            self.__info_entity = clicked_entity
 
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
@@ -1317,6 +1320,14 @@ class App(Tk, Updatable):
     def tick(self):
         if self.__simulation.is_running:
             self.tick_simulation()
+            if self.__info_entity is not None:
+                self.__info_string = ""
+                self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
+                self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
+                self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+                self.__gui.main_panel.info_panel.set_text(self.__info_string)
+            else:
+                self.__gui.main_panel.info_panel.set_text("Click on a boid to show the infomations about it")
         self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
         
