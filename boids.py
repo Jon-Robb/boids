@@ -327,7 +327,7 @@ class Cohesion(SteeringBehavior):
         
         self.__origin_entity = None
 
-    def behave(self, origin_entity: type['Entity'])-> Vect2D:
+    def behave(self, origin_entity: type['Entity']) -> Vect2D:
 
         if not self.__origin_entity:
             self.__origin_entity = origin_entity
@@ -336,7 +336,8 @@ class Cohesion(SteeringBehavior):
             if target_entity is not None:
                 if isinstance(target_entity, Entity):
                     sum_of_positions.set(sum_of_positions.x + target_entity.position.x, sum_of_positions.y + target_entity.position.y)
-                else: sum_of_position += target_entity
+                else: 
+                    sum_of_position += target_entity
         self.__center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
         desired_speed = (self.__center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
         sum_of_forces = (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
@@ -350,14 +351,23 @@ class Alignment(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50000):
         super().__init__(target_entities, attraction_repulsion_force)
         
+        self.__origin_entity = None
+        
+        self.__sum_of_forces = Vect2D()
+        
     def behave(self, origin_entity: type['Entity'] = None):
-        sum_of_forces = Vect2D()
-        for target_entity in self.target_entities:
-            if target_entity is not None:
-                if isinstance(target_entity, Entity):
-                    sum_of_forces += target_entity.speed
-        sum_of_forces /= len(self.target_entities)
-        return sum_of_forces
+        if not self.__origin_entity:
+            self.__origin_entity = origin_entity
+            for target_entity in self.target_entities:
+                if target_entity is not None:
+                    if isinstance(target_entity, Entity):
+                        self.__sum_of_forces += target_entity.speed
+        self.__sum_of_forces /= len(self.target_entities)
+        return  self.__sum_of_forces
+    
+    def draw(self, draw):
+        draw.line([self.__origin_entity.position.x, self.__origin_entity.position.y, self.__origin_entity.position.x + self.__sum_of_forces.x, self.__origin_entity.position.y +  self.__sum_of_forces.y], (255, 255, 0))
+        draw.ellipse([self.__origin_entity.position.x + self.__sum_of_forces.x -5 , self.__origin_entity.position.y + self.__sum_of_forces.y -5, self.__origin_entity.position.x + self.__sum_of_forces.x + 5 , self.__origin_entity.position.y + self.__sum_of_forces.y + 5], (255, 255, 0))
 
 class Separation(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
@@ -526,7 +536,7 @@ class Brain():
 
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
-                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
+                                            "SentientCircle": { "Behavior": Alignment, "Target_type" : "grouping" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
