@@ -1077,9 +1077,9 @@ class ControlBar(ttk.Frame):
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
         ttk.LabelFrame.__init__(self, root=None, text=text)
-        self.__start_stop_button = ttk.Button(self, text="Stop")
-        self.__next_button = ttk.Button(self, text="Next Step", state="disabled")
-        self.__reset_button = ttk.Button(self, text="Reset")
+        self.__start_stop_button = ttk.Button(self, text="Stop", width = 40)
+        self.__next_button = ttk.Button(self, text="Next Step", state="disabled", width = 40)
+        self.__reset_button = ttk.Button(self, text="Reset", width = 40)
         self.__start_stop_button.grid(row=0, column=0)
         self.__next_button.grid(row=1, column=0)
         self.__reset_button.grid(row=2, column=0)
@@ -1150,6 +1150,7 @@ class InfoPanel(ttk.LabelFrame):
     @info_entity.setter
     def info_entity(self, entity):
         self.__info_entity = entity
+        self.update()
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
@@ -1303,7 +1304,7 @@ class ParamPanel(ttk.LabelFrame):
         self.__param_selected = tk.StringVar()
         self.__param_selected.set("Predator Chasing Prey")
         self.__options_list = Utils.readfile("scenarios.txt")
-        self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
+        self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly", width=37)
     
         self.__combobox.pack()
 
@@ -1323,17 +1324,18 @@ class ParamPanel(ttk.LabelFrame):
 class VisualParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
+        self.__width_var = 28
         self.__speed_var = tk.IntVar()
-        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0, width=20)
+        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__speed_checkbutton.pack(padx=(50, 0))
         self.__steering_force_var = tk.IntVar()
-        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steers", variable=self.__steering_force_var, onvalue=1, offvalue=0, width=20)
+        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steers", variable=self.__steering_force_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__steering_force_checkbutton.pack(padx=(50, 0))
         self.__show_circle_var = tk.IntVar()
-        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Show Circles", variable=self.__show_circle_var, onvalue=0, offvalue=1, width=20)  
+        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Show Circles", variable=self.__show_circle_var, onvalue=0, offvalue=1, width=self.__width_var)  
         self.__show_circle_checkbutton.pack(padx=(50, 0))
         self.__show_fov_var = tk.IntVar()
-        self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=20)
+        self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__show_fov_checkbutton.pack(padx=(50, 0))
         
 
@@ -1408,7 +1410,6 @@ class App(Tk, Updatable):
         if clicked_entity is not None:
             self.__info_entity = clicked_entity
             self.__gui.main_panel.info_panel.info_entity = self.__info_entity
-            self.__gui.main_panel.info_panel.update()
             
 
     def tick_simulation(self, event=None):
