@@ -323,32 +323,29 @@ class Cohesion(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
         super().__init__(target_entities, attraction_repulsion_force)
 
+        self.__center_of_gravity = Vect2D()
+        
+        self.__origin_entity = None
 
-    # def behave(self, origin_entity: type['Entity'])-> Vect2D:
-    #     center_of_gravity = Vect2D()
-    #     sum_of_positions = Vect2D()
-    #     sum_of_forces = Vect2D()
-    #     for target_entity in self.target_entities:
-    #         if target_entity is not None:
-    #             if isinstance(target_entity, Entity):
-    #                 sum_of_positions.set(sum_of_positions.x + target_entity.position.x, sum_of_positions.y + target_entity.position.y)
-    #     center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
-    #     desired_speed = (center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
-    #     return desired_speed - origin_entity.speed
-    
-    def behave(self, origin_entity: type['Entity']):
-        center_of_gravity = Vect2D()
+    def behave(self, origin_entity: type['Entity'])-> Vect2D:
+
+        if not self.__origin_entity:
+            self.__origin_entity = origin_entity
         sum_of_positions = Vect2D()
-        sum_of_forces = Vect2D()
         for target_entity in self.target_entities:
             if target_entity is not None:
                 if isinstance(target_entity, Entity):
                     sum_of_positions.set(sum_of_positions.x + target_entity.position.x, sum_of_positions.y + target_entity.position.y)
-        center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
-        desired_speed = (center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
-        sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
+                else: sum_of_position += target_entity
+        self.__center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
+        desired_speed = (self.__center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
+        sum_of_forces = (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
     
+    def draw(self,draw):
+        draw.line([self.__origin_entity.position.x, self.__origin_entity.position.y, self.__center_of_gravity.x, self.__center_of_gravity.y], (0, 255, 0))
+        draw.ellipse([self.__center_of_gravity.x -5 , self.__center_of_gravity.y -5, self.__center_of_gravity.x + 5 , self.__center_of_gravity.y + 5], (0, 255, 0))    
+
 class Alignment(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50000):
         super().__init__(target_entities, attraction_repulsion_force)
@@ -773,7 +770,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
-
+            
     def move(self, time):
         Movable.move(self, time)
 
@@ -798,6 +795,7 @@ class SentientCircle(DynamicCircle):
         for eye in self.__eyes:
             eye.draw(draw)    
         self.__brain.draw_line_to_seen_entities(draw)
+        
 
     def draw_circle_steering_force(self, draw):
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
@@ -805,6 +803,7 @@ class SentientCircle(DynamicCircle):
         for steering_behavior in self.__brain.active_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
+                    
     @property
     def eyes(self):
         return self.__eyes
