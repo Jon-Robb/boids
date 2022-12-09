@@ -669,7 +669,7 @@ class Entity(Drawable, Updatable):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
         
-        self.available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
+        self.__available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
                                 "Raphael", "Nathan", "Leo", "Alexis", "Emile", "Edouard",
                                 "Felix", "Samuel", "Olivier", "Gabriel", "Charles", "Antoine",
                                 "Adam", "Victor", "Benjamin", "Elliot", "Jayden", "Arthur",
@@ -688,7 +688,7 @@ class Entity(Drawable, Updatable):
                                 "Gertrude", "Denis", "Donald", "Jonathan", "Andrejz"]
         
         #get a random name from the list
-        self.__name = random.choice(self.available_names)
+        self.__name = random.choice(self.__available_names)
 
     @abstractmethod
     def draw(self):
@@ -1044,7 +1044,7 @@ class GUI(ttk.Frame, Drawable):
 
     @property
     def view_window(self):
-        return self.__view_window  
+        return self.__view_window
 
 class ControlBar(ttk.Frame):
     def __init__(self):
@@ -1099,19 +1099,57 @@ class StartStopPanel(ttk.LabelFrame):
 class InfoPanel(ttk.LabelFrame):
     def __init__(self, text):
         ttk.LabelFrame.__init__(self, root=None, text=text)
-        self.__info_label = tk.Text(self, width=30, height=10)
-        self.set_text("Click on a boid to show the infomations about it")
+        self.__info_label = tk.Text(self, width=30, height=20)
+        self.__set_text("Click on a boid to show the infomations about it")
         self.__info_label.grid(row=0, column=0)
+        
+        self.__info_entity = None
+        self.__info_string = ""
 
     @property
     def info_label(self):
         return self.__info_label
     
-    def set_text(self, text):
+    def __set_text(self, text):
         self.__info_label.config(state=tk.NORMAL)
         self.__info_label.delete(1.0, tk.END)
         self.__info_label.insert(tk.END, text)
         self.__info_label.config(state=tk.DISABLED)
+        
+    @property
+    def info_entity(self):
+        return self.__info_entity
+    
+    @property
+    def info_string(self):
+        return self.__info_string
+
+    def update(self):
+        if self.__info_entity is not None:
+            self.__info_string = ""
+            self.__info_string += "Name: " + self.__info_entity.name + "\n"
+            self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
+            self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
+            self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+            self.__info_string += "Size: {}".format(math.trunc(self.__info_entity.size)) + "\n"
+            self.__info_string += "Width: {}".format(math.trunc(self.__info_entity.width)) + "\n"
+            self.__info_string += "Steering forces: " + "\n"
+            if self.__info_entity.steering_behaviors is not None:
+                for steering_behavior in self.__info_entity.steering_behaviors:
+                    self.__info_string += "    " + steering_behavior.__class__.__name__ + "\n"
+                    if steering_behavior.target_entities is not None:
+                        for target_entity in steering_behavior.target_entities:
+                            if isinstance(target_entity, Entity):
+                                self.__info_string += "        " + target_entity.name + "\n"
+            else:
+                self.__info_string += "    None\n"
+            self.__set_text(self.__info_string)
+        else:
+            self.__set_text("Click on a boid to show the infomations about it")
+    
+    @info_entity.setter
+    def info_entity(self, entity):
+        self.__info_entity = entity
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
@@ -1337,9 +1375,6 @@ class App(Tk, Updatable):
         self.iconbitmap('boids.ico')
         self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
         
-        self.__info_entity = None
-        self.__info_string = ""
-        
         self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
         self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
         self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
@@ -1372,7 +1407,8 @@ class App(Tk, Updatable):
         clicked_entity = self.__simulation.check_entity_clicked(event)
         if clicked_entity is not None:
             self.__info_entity = clicked_entity
-            self.update_info_panel()
+            self.__gui.main_panel.info_panel.info_entity = self.__info_entity
+            self.__gui.main_panel.info_panel.update()
             
 
     def tick_simulation(self, event=None):
@@ -1386,20 +1422,13 @@ class App(Tk, Updatable):
 
 
     def update_info_panel(self):
-        self.__info_string = ""
-        self.__info_string += "Name: " + self.__info_entity.name + "\n"
-        self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
-        self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
-        self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+        
         self.__gui.main_panel.info_panel.set_text(self.__info_string)
 
     def tick(self):
         if self.__simulation.is_running:
             self.tick_simulation()
-            if self.__info_entity is not None:
-                self.update_info_panel()
-            else:
-                self.__gui.main_panel.info_panel.set_text("Click on a boid to show the infomations about it")
+            self.__gui.main_panel.info_panel.update()
         self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
         
