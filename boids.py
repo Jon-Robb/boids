@@ -1167,6 +1167,14 @@ class InfoPanel(ttk.LabelFrame):
                         for target_entity in steering_behavior.target_entities:
                             if isinstance(target_entity, Entity):
                                 self.__info_string += "        " + target_entity.name + "\n"
+            elif hasattr(self.__info_entity, 'brain') and self.__info_entity.brain is not None and self.__info_entity.brain.active_behaviors is not None and hasattr(self.__info_entity.brain, 'active_behaviors'):
+                for steering_behavior in self.__info_entity.brain.active_behaviors:
+                    self.__info_string += "    " + steering_behavior.__class__.__name__ + "\n"
+                    if steering_behavior.target_entities is not None:
+                        for target_entity in steering_behavior.target_entities:
+                            if isinstance(target_entity, Entity):
+                                self.__info_string += "        " + target_entity.name + "\n"
+                
             else:
                 self.__info_string += "    None\n"
             
