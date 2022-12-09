@@ -580,6 +580,11 @@ class Brain():
     @property
     def active_behaviors(self):
         return self.__active_behaviors
+    
+    @property
+    def seen_entities(self):
+        return self.__seen_entities
+
 class Eye(Drawable):
     def __init__(self, owner:type['Entity'], fov:float=45, range:float=150, vector:Vect2D=None):
         self.__owner = owner
@@ -785,7 +790,7 @@ class SentientCircle(DynamicCircle):
         self.__brain = Brain(self, environment)
         _id = id(self.__brain)
         
-        self.__eyes = [Eye(self),]
+        self.__eyes = [Eye(self)]
 
     def tick(self, time):
         DynamicCircle.tick(self, time)
@@ -807,6 +812,10 @@ class SentientCircle(DynamicCircle):
     @property
     def eyes(self):
         return self.__eyes
+    
+    @property
+    def brain(self):
+        return self.__brain
 
 class Simulation(Updatable):
     def __init__(self, size=Vect2D(100,100)):
@@ -1143,9 +1152,10 @@ class InfoPanel(ttk.LabelFrame):
             else:
                 self.__info_string += "    None\n"
             
-            if self.__info_entity.eyes is not None:
+            if hasattr(self.__info_entity, 'eyes') and hasattr(self.__info_entity, 'brain') and self.__info_entity.eyes is not None:
                 self.__info_string += "Sees: " + "\n"
-            # for entity in self.__info_entity.sees:
+                for seen_entity in self.__info_entity.brain.seen_entities:
+                    self.__info_string += "    " + seen_entity.name + ":" + seen_entity.__class__.__name__ + "\n"
             
             self.__set_text(self.__info_string)
         else:
