@@ -320,9 +320,22 @@ class Evade(Pursuit):
         return super().behave(origin_entity) * - 1   
             
 class Cohesion(SteeringBehavior):
-    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=5):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
         super().__init__(target_entities, attraction_repulsion_force)
 
+
+    # def behave(self, origin_entity: type['Entity'])-> Vect2D:
+    #     center_of_gravity = Vect2D()
+    #     sum_of_positions = Vect2D()
+    #     sum_of_forces = Vect2D()
+    #     for target_entity in self.target_entities:
+    #         if target_entity is not None:
+    #             if isinstance(target_entity, Entity):
+    #                 sum_of_positions.set(sum_of_positions.x + target_entity.position.x, sum_of_positions.y + target_entity.position.y)
+    #     center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
+    #     desired_speed = (center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
+    #     return desired_speed - origin_entity.speed
+    
     def behave(self, origin_entity: type['Entity']):
         center_of_gravity = Vect2D()
         sum_of_positions = Vect2D()
@@ -336,19 +349,31 @@ class Cohesion(SteeringBehavior):
         sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
         return sum_of_forces
     
+class Alignment(SteeringBehavior):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50000):
+        super().__init__(target_entities, attraction_repulsion_force)
+        
+    def behave(self, origin_entity: type['Entity'] = None):
+        sum_of_forces = Vect2D()
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if isinstance(target_entity, Entity):
+                    sum_of_forces += target_entity.speed
+        sum_of_forces /= len(self.target_entities)
+        return sum_of_forces
 
 class Separation(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
         super().__init__(target_entities, attraction_repulsion_force)
         
-        def behave(self, origin_entity: type['Entity']):
-            sum_of_forces = Vect2D()
-            for target_entity in self.target_entities:
-                if target_entity is not None:
-                    if isinstance(target_entity, Entity):
-                        behavior = EntityRepulsion(target_entity, self.attraction_repulsion_force)
-                        sum_of_forces += behavior.behave(origin_entity)
-            return sum_of_forces
+    def behave(self, origin_entity: type['Entity']):
+        sum_of_forces = Vect2D()
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if isinstance(target_entity, Entity):
+                    behavior = EntityRepulsion([target_entity], self.attraction_repulsion_force)
+                    sum_of_forces += behavior.behave(origin_entity)
+        return sum_of_forces
 
 # #  __  .__   __. .___________. _______ .______       _______    ___       ______  _______     _______.
 # |  | |  \ |  | |           ||   ____||   _  \     |   ____|  /   \     /      ||   ____|   /       |
@@ -504,7 +529,7 @@ class Brain():
 
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
-                                            "SentientCircle": { "Behavior": Separation, "Target_type" : "single" },
+                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
@@ -529,7 +554,7 @@ class Brain():
                         if self.__behavior_patterns[seen_entity.__class__.__name__] == key:
                             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
                             self.__active_behaviors.append(behavior([seen_entity]))
-                elif values["Target_type"] == "group":
+                elif values["Target_type"] == "grouping":
                     target_group = []
                     behavior = values["Behavior"]
                     for seen_entity in self.__seen_entities:
