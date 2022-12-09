@@ -1186,13 +1186,17 @@ class ViewWindow(ttk.Label, Drawable):
         self.__steering_force_is_drawn = False
         self.__circle_is_drawn = True
         self.__fov_is_drawn = False
+        self.__crazy_mode = False
 
 
     def update_view(self, simulation):
-            self.__newbackground = Image.open("tropicalforest.jpg")
-            i = self.__newbackground.resize((int(self.sizex), int(self.sizey)))
-            draw = ImageDraw.Draw(i)
-            
+            if self.__crazy_mode:
+                i = self.__resized
+                draw = ImageDraw.Draw(i)
+            else:
+                self.__newbackground = Image.open("tropicalforest.jpg")
+                i = self.__newbackground.resize((int(self.sizex), int(self.sizey)))
+                draw = ImageDraw.Draw(i)
             # for sprite in simulation.sprites:
             #     if self.__speed_is_drawn:
             #         sprite.draw_circle_speed(draw)
@@ -1300,6 +1304,9 @@ class ViewWindow(ttk.Label, Drawable):
     def toggle_draw_speed(self, event):
         self.__speed_is_drawn = not self.__speed_is_drawn
 
+    def toggle_crazy_mode(self, event):
+        self.__crazy_mode = not self.__crazy_mode
+
     @property
     def canvas(self):
         return self.__canvas
@@ -1355,6 +1362,9 @@ class VisualParamPanel(ttk.LabelFrame):
         self.__show_fov_var = tk.IntVar()
         self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__show_fov_checkbutton.pack(padx=(50, 0))
+        self.__crazy_mode_var = tk.IntVar()
+        self.__crazy_mode_checkbutton = ttk.Checkbutton(self, text="Crazy Mode", variable=self.__crazy_mode_var, onvalue=1, offvalue=0, width=self.__width_var)
+        self.__crazy_mode_checkbutton.pack(padx=(50, 0))
         
 
     @property
@@ -1372,6 +1382,10 @@ class VisualParamPanel(ttk.LabelFrame):
     @property
     def speed_checkbutton(self):
         return self.__speed_checkbutton
+
+    @property
+    def crazy_mode_checkbutton(self):
+        return self.__crazy_mode_checkbutton
     
 class SimParamPanel(ParamPanel):
     def __init__(self):
@@ -1399,6 +1413,8 @@ class App(Tk, Updatable):
         self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
         self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
         self.__gui.main_panel.visual_param_panel.show_fov_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_fov)
+        self.__gui.main_panel.visual_param_panel.crazy_mode_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_crazy_mode)
+
         
         
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
