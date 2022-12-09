@@ -1144,8 +1144,7 @@ class InfoPanel(ttk.LabelFrame):
 
     def update(self):
         if self.__info_entity is not None:
-            self.__info_string = ""
-            self.__info_string += "Name: " + self.__info_entity.name + "\n"
+            self.__info_string = "Name: " + self.__info_entity.name + "\n"
             self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
             self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
             self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
