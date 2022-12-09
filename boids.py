@@ -643,6 +643,27 @@ class Entity(Drawable, Updatable):
     def __init__(self, border_color, border_width, fill_color, position, size):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
+        
+        self.available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
+                                "Raphael", "Nathan", "Leo", "Alexis", "Emile", "Edouard",
+                                "Felix", "Samuel", "Olivier", "Gabriel", "Charles", "Antoine",
+                                "Adam", "Victor", "Benjamin", "Elliot", "Jayden", "Arthur",
+                                "James", "Louis", "Theo", "Xavier", "Zack", "Arnaud",
+                                "Lucas", "Ethan", "Nolan", "Henri", "Loic", "Milan", "Mathis",
+                                "Zachary", "Dylan", "Alexandre", "Tristan", "Laurent", "Eli",
+                                "Mayson", "Justin", "Anthony", "Ryan", "Isaac", "Jules", "Jackson",
+                                "Eliott", "Evan", "Leonard", "Philippe", "Caleb", "Nicolas",
+                                "Damien", "Jake", "Theodore", "Eliot", "Eloi", "Ludovic",
+                                "Malik", "Matheo", "Louka", "Alex", "Hayden", "Zackary",
+                                "Hugo", "Rafael", "Matteo", "David", "Hubert", "Derek",
+                                "Etienne", "Vincent", "Rayan", "Axel", "Leon", "Tyler",
+                                "Mathias", "Albert", "Maxime", "Enzo", "Jordan", "Julien",
+                                "Simon", "Loik", "Michael", "Ayden", "Daniel", "Tom", "Jack",
+                                "Joshua", "Maverick", "Adrien", "Lyam", "Mateo", "Remi", "Elias",
+                                "Gertrude", "Denis", "Donald", "Jonathan", "Andrejz"]
+        
+        #get a random name from the list
+        self.__name = random.choice(self.available_names)
 
     @abstractmethod
     def draw(self):
@@ -651,6 +672,10 @@ class Entity(Drawable, Updatable):
     @abstractmethod
     def tick(self):
         pass
+    
+    @property
+    def name(self):
+        return self.__name
      
 class Circle(Entity):
     def __init__(self, border_color, border_width, fill_color, position:Vect2D, radius:int):
@@ -941,8 +966,9 @@ class Simulation(Updatable):
         self.__is_running = not self.__is_running
         
     def check_entity_clicked(self, event):
+        radius_offset = 20
         for sprite in reversed(self.__sprites):
-            if sprite.position.x - sprite.radius < event.x < sprite.position.x + sprite.radius and sprite.position.y - sprite.radius < event.y < sprite.position.y + sprite.radius:
+            if sprite.position.x - (sprite.radius + radius_offset) < event.x < sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) < event.y < sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
 
     @property
@@ -998,10 +1024,10 @@ class GUI(ttk.Frame, Drawable):
 class ControlBar(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
-        self.__control_panel = StartStopPanel("Control")
-        self.__param_panel = ParamPanel("Paramètre")
-        self.__visual_param_panel = VisualParamPanel("Paramètre visuel")
-        self.__Info_panel = InfoPanel("Boid Informations")
+        self.__control_panel = StartStopPanel("Controls")
+        self.__param_panel = ParamPanel("Scenarios")
+        self.__visual_param_panel = VisualParamPanel("Visual Parameters")
+        self.__Info_panel = InfoPanel("Selected Entity Informations")
         self.__control_panel.grid(row=0, column=0, sticky="N")
         self.__param_panel.grid(row=1, column=0, sticky="N")
         self.__visual_param_panel.grid(row=2, column=0, sticky="N")
@@ -1321,6 +1347,8 @@ class App(Tk, Updatable):
         clicked_entity = self.__simulation.check_entity_clicked(event)
         if clicked_entity is not None:
             self.__info_entity = clicked_entity
+            self.update_info_panel()
+            
 
     def tick_simulation(self, event=None):
         self.__simulation.tick(time=0.1)
@@ -1331,15 +1359,20 @@ class App(Tk, Updatable):
         self.__gui.main_panel.control_panel.next_button.config(state="disabled")
         self.__simulation.reset(key)
 
+
+    def update_info_panel(self):
+        self.__info_string = ""
+        self.__info_string += "Name: " + self.__info_entity.name + "\n"
+        self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
+        self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
+        self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+        self.__gui.main_panel.info_panel.set_text(self.__info_string)
+
     def tick(self):
         if self.__simulation.is_running:
             self.tick_simulation()
             if self.__info_entity is not None:
-                self.__info_string = ""
-                self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
-                self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
-                self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
-                self.__gui.main_panel.info_panel.set_text(self.__info_string)
+                self.update_info_panel()
             else:
                 self.__gui.main_panel.info_panel.set_text("Click on a boid to show the infomations about it")
         self.__gui.view_window.update_view(self.__simulation)
