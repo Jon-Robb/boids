@@ -1209,7 +1209,7 @@ class InfoPanel(ttk.LabelFrame):
             if hasattr(self.__info_entity, 'eyes') and hasattr(self.__info_entity, 'brain') and self.__info_entity.eyes is not None:
                 self.__info_string += "Eyes: " + "\n"
                 for eye in self.__info_entity.eyes:
-                    self.__info_string += "    " +  "Sees (FOV: " + str(eye.fov) + "): " + "\n"
+                    self.__info_string += "    " + str(self.__info_entity.eyes.index(eye)) +" (FOV: " + str(math.trunc(eye.fov)) + ", Range: " + str(eye.range) + "): " + "\n"
                     for seen_entity in self.__info_entity.brain.seen_entities:
                         self.__info_string += "        " + seen_entity.name + ":" + seen_entity.__class__.__name__ + "\n"
             
