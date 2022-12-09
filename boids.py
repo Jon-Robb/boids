@@ -536,7 +536,7 @@ class Brain():
 
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
-                                            "SentientCircle": { "Behavior": Alignment, "Target_type" : "grouping" },
+                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
@@ -835,6 +835,7 @@ class Simulation(Updatable):
         self.__mouse_pos = Vect2D(-1, -1)
         self.__is_running = True
         self.__seed = 0
+        self.__selected_entity = None
         
         self.initialize_scenario()
         
@@ -1013,6 +1014,14 @@ class Simulation(Updatable):
         for sprite in reversed(self.__sprites):
             if sprite.position.x - (sprite.radius + radius_offset) < event.x < sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) < event.y < sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
+
+    @property  
+    def selected_entity(self):
+        return self.__selected_entity
+    
+    @selected_entity.setter
+    def selected_entity(self, value):
+        self.__selected_entity = value
 
     @property
     def sprites(self):
@@ -1220,6 +1229,8 @@ class ViewWindow(ttk.Label, Drawable):
             #         if hasattr(sprite, 'draw_fov'):
             #             sprite.draw_fov(draw)   
             
+            
+            
             if self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
@@ -1291,7 +1302,14 @@ class ViewWindow(ttk.Label, Drawable):
             elif not self.__speed_is_drawn and not self.__steering_force_is_drawn and not self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
-                        sprite.draw_fov(draw)                       
+                        sprite.draw_fov(draw)   
+                        
+            if simulation.selected_entity:
+                simulation.selected_entity.draw(draw)
+                simulation.selected_entity.draw_circle_speed(draw)                
+                simulation.selected_entity.draw_circle_steering_force(draw)    
+                if hasattr(simulation.selected_entity, 'draw_fov'):
+                    simulation.selected_entity.draw_fov(draw)
         
             self.__image_tk = ImageTk.PhotoImage(i)
             self.__image_label["image"] = self.__image_tk
@@ -1453,6 +1471,7 @@ class App(Tk, Updatable):
         if clicked_entity is not None:
             self.__info_entity = clicked_entity
             self.__gui.main_panel.info_panel.info_entity = self.__info_entity
+            self.__simulation.selected_entity = clicked_entity
             
 
     def tick_simulation(self, event=None):
