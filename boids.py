@@ -219,7 +219,7 @@ class PseudoWander(SteeringBehavior):
         self.__on_or_in = False
         self.__wander_angle = random.random() * 2 * math.pi
         
-    def setAngle(self, vector:Vect2D, angle:float)->Vect2D:
+    def set_angle(self, vector:Vect2D, angle:float)->Vect2D:
         length = vector.length
         vector.x = math.cos(angle) * length
         vector.y = math.sin(angle) * length
@@ -242,7 +242,7 @@ class PseudoWander(SteeringBehavior):
         displacement = Vect2D.from_random_normalized()
         displacement *= self.__radius
         
-        self.setAngle(displacement, self.__wander_angle)
+        self.set_angle(displacement, self.__wander_angle)
         
         self.__wander_angle += (random.random() * self.__angle_change) - (self.__angle_change * .5)
         
@@ -251,11 +251,11 @@ class PseudoWander(SteeringBehavior):
         return desired_speed - origin_entity.speed
             
 class Flee(Seek):
-    def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force=-1):
+    def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force:int= 1):
         super().__init__(target_entities, attraction_repulsion_force)
         
     def behave(self, origin_entity: type['Entity'])-> Vect2D:
-        return super().behave(origin_entity)
+        return super().behave(origin_entity) * -1
     
 class Pursuit(SteeringBehavior):
     def __init__(self, target_entities:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=1):
@@ -313,11 +313,11 @@ class EntityRepulsion(SteeringBehavior):
         return self.resulting_direction
                     
 class Evade(Pursuit):
-    def __init__(self, target_entity:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=-10):
+    def __init__(self, target_entity:type['Entity']=None, ratio:int = 1, attraction_repulsion_force:int=1):
         super().__init__(target_entity, ratio, attraction_repulsion_force)
         
     def behave(self, origin_entity: type['Entity'])-> Vect2D:
-        return super().behave(origin_entity)
+        return super().behave(origin_entity) * - 1   
             
 class Cohesion(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=5):
@@ -335,8 +335,22 @@ class Cohesion(SteeringBehavior):
         desired_speed = (center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
         sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
         return sum_of_forces
+    
 
-#  __  .__   __. .___________. _______ .______       _______    ___       ______  _______     _______.
+class Separation(SteeringBehavior):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
+        super().__init__(target_entities, attraction_repulsion_force)
+        
+        def behave(self, origin_entity: type['Entity']):
+            sum_of_forces = Vect2D()
+            for target_entity in self.target_entities:
+                if target_entity is not None:
+                    if isinstance(target_entity, Entity):
+                        behavior = EntityRepulsion(target_entity, self.attraction_repulsion_force)
+                        sum_of_forces += behavior.behave(origin_entity)
+            return sum_of_forces
+
+# #  __  .__   __. .___________. _______ .______       _______    ___       ______  _______     _______.
 # |  | |  \ |  | |           ||   ____||   _  \     |   ____|  /   \     /      ||   ____|   /       |
 # |  | |   \|  | `---|  |----`|  |__   |  |_)  |    |  |__    /  ^  \   |  ,----'|  |__     |   (----`
 # |  | |  . `  |     |  |     |   __|  |      /     |   __|  /  /_\  \  |  |     |   __|     \   \    
@@ -490,7 +504,7 @@ class Brain():
 
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
-                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "group" },
+                                            "SentientCircle": { "Behavior": Separation, "Target_type" : "single" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
