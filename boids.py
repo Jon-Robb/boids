@@ -540,8 +540,9 @@ class Brain():
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
-            self.__permanent_patterns = [BorderRepulsion(sim_dim=environment.size)]
         else: self.__behavior_patterns = behavior_patterns
+        self.__permanent_patterns = [BorderRepulsion(sim_dim=environment.size)]
+
 
         self.__seen_entities = []
         self.__active_behaviors = self.__permanent_patterns
@@ -794,12 +795,12 @@ class DynamicCircle(Circle, Movable, Piloted):
         self.move(time)
 
 class SentientCircle(DynamicCircle):
-    def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100, environment=None):
+    def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, environment=None, brain=None, eyes=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors)
 
-        self.__brain = Brain(self, environment)
+        self.__brain = brain if brain else Brain(self, environment)
         
-        self.__eyes = [Eye(self, fov, range)]
+        self.__eyes = eyes if eyes else [Eye(self)]
 
     def tick(self, time):
         DynamicCircle.tick(self, time)
@@ -826,11 +827,36 @@ class SentientCircle(DynamicCircle):
     def brain(self):
         return self.__brain
     
+    @eyes.setter
+    def eyes(self, eyes):
+        self.__eyes = eyes
+        
+    @brain.setter
+    def brain(self, brain):
+        self.__brain = brain
+    
 class PredatorCircle(SentientCircle):
     def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100, environment=None):
         SentientCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors, fov, range, environment)
 
-    
+        
+        predator_dict = {                   "DynamicCircle": { "Behavior": Pursuit, "Target_type" : "single" }, 
+                                            "SentientCircle": { "Behavior": Pursuit, "Target_type" : "grouping" },
+                                            "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" },
+                                            "Unknown": { "Behavior": Evade, "Target_type" : "single" },
+                                            "PredatorCircle": { "Behavior": Alignment, "Target_type" : "grouping" },
+                                            
+                                            "No_target": { "Behavior": PseudoWander, "Target_type" : "none" }
+                        }
+        self.brain = Brain(self, environment, predator_dict)    
+        self.eyes = [Eye(self, fov = 25, range = 200)]
+        
+
+       
+
+
+class PreyCircle(SentientCircle):
+    pass
 class Simulation(Updatable):
     def __init__(self, size=Vect2D(100,100)):
 
@@ -965,28 +991,23 @@ class Simulation(Updatable):
                                                         steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)]))
 
 
-            # case 'Predator Chasing Prey': # Default
-            #     nb_obstacles = 2
-            #     nb_predators = 2
-            #     nb_preys = 10
-            #     for i in range(nb_predators):
-            #         self.__sprites.append(SentientCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
-            #                                             speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-            #                                             border_color=RGBAColor(randomize=True),
-            #                                             border_width=5,
-            #                                             acceleration=Vect2D(0,0),
-            #                                             max_speed= 100,
-            #                                             max_steering_force=5,
-            #                                             slowing_distance=10,
-            #                                             steering_force=Vect2D(0,0),
-            #                                             environment=self,
-            #                                            ))
-
-            #     for i, sprite in enumerate(self.__sprites):
-            #         sprite.fill_color = RGBAColor(128, 0, 0, 255) if type(sprite.steering_behaviors[0]) is Pursuit else RGBAColor(0, 128, 0, 255)
-            #         sprite.radius = 60 if type(sprite.steering_behaviors[0]) is Pursuit else 30
-            #         if i%2 == 0 and i != len(self.__sprites) - 1:
-            #             self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
+            case 'Predator Chasing Prey': # Default
+                nb_obstacles = 2
+                nb_predators = 2
+                nb_preys = 10
+                for i in range(nb_predators):
+                    self.__sprites.append(PredatorCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
+                                                        speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+                                                        border_color=RGBAColor(randomize=True),
+                                                        border_width=5,
+                                                        acceleration=Vect2D(0,0),
+                                                        max_speed= 100,
+                                                        max_steering_force=5,
+                                                        slowing_distance=10,
+                                                        steering_force=Vect2D(0,0),
+                                                        environment=self
+                                                       ))
+                    
                         
             case 'Red chasing Green': # Default
                 nb_balls = 6
