@@ -320,9 +320,22 @@ class Evade(Pursuit):
         return super().behave(origin_entity) * - 1   
             
 class Cohesion(SteeringBehavior):
-    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=5):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
         super().__init__(target_entities, attraction_repulsion_force)
 
+
+    # def behave(self, origin_entity: type['Entity'])-> Vect2D:
+    #     center_of_gravity = Vect2D()
+    #     sum_of_positions = Vect2D()
+    #     sum_of_forces = Vect2D()
+    #     for target_entity in self.target_entities:
+    #         if target_entity is not None:
+    #             if isinstance(target_entity, Entity):
+    #                 sum_of_positions.set(sum_of_positions.x + target_entity.position.x, sum_of_positions.y + target_entity.position.y)
+    #     center_of_gravity.set(sum_of_positions.x / len(self.target_entities), sum_of_positions.y / len(self.target_entities)) 
+    #     desired_speed = (center_of_gravity - origin_entity.position).normalized * origin_entity.max_speed
+    #     return desired_speed - origin_entity.speed
+    
     def behave(self, origin_entity: type['Entity']):
         center_of_gravity = Vect2D()
         sum_of_positions = Vect2D()
@@ -336,19 +349,31 @@ class Cohesion(SteeringBehavior):
         sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
         return sum_of_forces
     
+class Alignment(SteeringBehavior):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50000):
+        super().__init__(target_entities, attraction_repulsion_force)
+        
+    def behave(self, origin_entity: type['Entity'] = None):
+        sum_of_forces = Vect2D()
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if isinstance(target_entity, Entity):
+                    sum_of_forces += target_entity.speed
+        sum_of_forces /= len(self.target_entities)
+        return sum_of_forces
 
 class Separation(SteeringBehavior):
     def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force=50):
         super().__init__(target_entities, attraction_repulsion_force)
         
-        def behave(self, origin_entity: type['Entity']):
-            sum_of_forces = Vect2D()
-            for target_entity in self.target_entities:
-                if target_entity is not None:
-                    if isinstance(target_entity, Entity):
-                        behavior = EntityRepulsion(target_entity, self.attraction_repulsion_force)
-                        sum_of_forces += behavior.behave(origin_entity)
-            return sum_of_forces
+    def behave(self, origin_entity: type['Entity']):
+        sum_of_forces = Vect2D()
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if isinstance(target_entity, Entity):
+                    behavior = EntityRepulsion([target_entity], self.attraction_repulsion_force)
+                    sum_of_forces += behavior.behave(origin_entity)
+        return sum_of_forces
 
 # #  __  .__   __. .___________. _______ .______       _______    ___       ______  _______     _______.
 # |  | |  \ |  | |           ||   ____||   _  \     |   ____|  /   \     /      ||   ____|   /       |
@@ -504,7 +529,7 @@ class Brain():
 
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
-                                            "SentientCircle": { "Behavior": Separation, "Target_type" : "single" },
+                                            "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
@@ -529,7 +554,7 @@ class Brain():
                         if self.__behavior_patterns[seen_entity.__class__.__name__] == key:
                             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
                             self.__active_behaviors.append(behavior([seen_entity]))
-                elif values["Target_type"] == "group":
+                elif values["Target_type"] == "grouping":
                     target_group = []
                     behavior = values["Behavior"]
                     for seen_entity in self.__seen_entities:
@@ -644,7 +669,7 @@ class Entity(Drawable, Updatable):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
         
-        self.available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
+        self.__available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
                                 "Raphael", "Nathan", "Leo", "Alexis", "Emile", "Edouard",
                                 "Felix", "Samuel", "Olivier", "Gabriel", "Charles", "Antoine",
                                 "Adam", "Victor", "Benjamin", "Elliot", "Jayden", "Arthur",
@@ -663,7 +688,7 @@ class Entity(Drawable, Updatable):
                                 "Gertrude", "Denis", "Donald", "Jonathan", "Andrejz"]
         
         #get a random name from the list
-        self.__name = random.choice(self.available_names)
+        self.__name = random.choice(self.__available_names)
 
     @abstractmethod
     def draw(self):
@@ -1019,7 +1044,7 @@ class GUI(ttk.Frame, Drawable):
 
     @property
     def view_window(self):
-        return self.__view_window  
+        return self.__view_window
 
 class ControlBar(ttk.Frame):
     def __init__(self):
@@ -1052,9 +1077,9 @@ class ControlBar(ttk.Frame):
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
         ttk.LabelFrame.__init__(self, root=None, text=text)
-        self.__start_stop_button = ttk.Button(self, text="Stop")
-        self.__next_button = ttk.Button(self, text="Next Step", state="disabled")
-        self.__reset_button = ttk.Button(self, text="Reset")
+        self.__start_stop_button = ttk.Button(self, text="Stop", width = 40)
+        self.__next_button = ttk.Button(self, text="Next Step", state="disabled", width = 40)
+        self.__reset_button = ttk.Button(self, text="Reset", width = 40)
         self.__start_stop_button.grid(row=0, column=0)
         self.__next_button.grid(row=1, column=0)
         self.__reset_button.grid(row=2, column=0)
@@ -1074,19 +1099,58 @@ class StartStopPanel(ttk.LabelFrame):
 class InfoPanel(ttk.LabelFrame):
     def __init__(self, text):
         ttk.LabelFrame.__init__(self, root=None, text=text)
-        self.__info_label = tk.Text(self, width=30, height=10)
-        self.set_text("Click on a boid to show the infomations about it")
+        self.__info_label = tk.Text(self, width=30, height=20)
+        self.__set_text("Click on a boid to show the infomations about it")
         self.__info_label.grid(row=0, column=0)
+        
+        self.__info_entity = None
+        self.__info_string = ""
 
     @property
     def info_label(self):
         return self.__info_label
     
-    def set_text(self, text):
+    def __set_text(self, text):
         self.__info_label.config(state=tk.NORMAL)
         self.__info_label.delete(1.0, tk.END)
         self.__info_label.insert(tk.END, text)
         self.__info_label.config(state=tk.DISABLED)
+        
+    @property
+    def info_entity(self):
+        return self.__info_entity
+    
+    @property
+    def info_string(self):
+        return self.__info_string
+
+    def update(self):
+        if self.__info_entity is not None:
+            self.__info_string = ""
+            self.__info_string += "Name: " + self.__info_entity.name + "\n"
+            self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
+            self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
+            self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+            if isinstance(self.__info_entity, Circle):
+                self.__info_string += "Radius: {}".format(self.__info_entity.radius) + "\n"
+            self.__info_string += "Steering forces: " + "\n"
+            if self.__info_entity.steering_behaviors is not None:
+                for steering_behavior in self.__info_entity.steering_behaviors:
+                    self.__info_string += "    " + steering_behavior.__class__.__name__ + "\n"
+                    if steering_behavior.target_entities is not None:
+                        for target_entity in steering_behavior.target_entities:
+                            if isinstance(target_entity, Entity):
+                                self.__info_string += "        " + target_entity.name + "\n"
+            else:
+                self.__info_string += "    None\n"
+            self.__set_text(self.__info_string)
+        else:
+            self.__set_text("Click on a boid to show the infomations about it")
+    
+    @info_entity.setter
+    def info_entity(self, entity):
+        self.__info_entity = entity
+        self.update()
 
 class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
@@ -1244,7 +1308,7 @@ class ParamPanel(ttk.LabelFrame):
         self.__param_selected = tk.StringVar()
         self.__param_selected.set("Predator Chasing Prey")
         self.__options_list = Utils.readfile("scenarios.txt")
-        self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly")
+        self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly", width=37)
     
         self.__combobox.pack()
 
@@ -1264,17 +1328,18 @@ class ParamPanel(ttk.LabelFrame):
 class VisualParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
+        self.__width_var = 28
         self.__speed_var = tk.IntVar()
-        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0, width=20)
+        self.__speed_checkbutton = ttk.Checkbutton(self, text="Show Speed", variable=self.__speed_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__speed_checkbutton.pack(padx=(50, 0))
         self.__steering_force_var = tk.IntVar()
-        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steers", variable=self.__steering_force_var, onvalue=1, offvalue=0, width=20)
+        self.__steering_force_checkbutton = ttk.Checkbutton(self, text="Show Steers", variable=self.__steering_force_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__steering_force_checkbutton.pack(padx=(50, 0))
         self.__show_circle_var = tk.IntVar()
-        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Show Circles", variable=self.__show_circle_var, onvalue=0, offvalue=1, width=20)  
+        self.__show_circle_checkbutton = ttk.Checkbutton(self, text="Show Circles", variable=self.__show_circle_var, onvalue=0, offvalue=1, width=self.__width_var)  
         self.__show_circle_checkbutton.pack(padx=(50, 0))
         self.__show_fov_var = tk.IntVar()
-        self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=20)
+        self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__show_fov_checkbutton.pack(padx=(50, 0))
         
 
@@ -1316,9 +1381,6 @@ class App(Tk, Updatable):
         self.iconbitmap('boids.ico')
         self.__simulation = Simulation(size=Vect2D(self.__gui.view_window.width, self.__gui.view_window.height))
         
-        self.__info_entity = None
-        self.__info_string = ""
-        
         self.__gui.main_panel.visual_param_panel.speed_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_speed)
         self.__gui.main_panel.visual_param_panel.steering_force_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_steering_force)
         self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
@@ -1351,7 +1413,7 @@ class App(Tk, Updatable):
         clicked_entity = self.__simulation.check_entity_clicked(event)
         if clicked_entity is not None:
             self.__info_entity = clicked_entity
-            self.update_info_panel()
+            self.__gui.main_panel.info_panel.info_entity = self.__info_entity
             
 
     def tick_simulation(self, event=None):
@@ -1365,20 +1427,13 @@ class App(Tk, Updatable):
 
 
     def update_info_panel(self):
-        self.__info_string = ""
-        self.__info_string += "Name: " + self.__info_entity.name + "\n"
-        self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
-        self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
-        self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
+        
         self.__gui.main_panel.info_panel.set_text(self.__info_string)
 
     def tick(self):
         if self.__simulation.is_running:
             self.tick_simulation()
-            if self.__info_entity is not None:
-                self.update_info_panel()
-            else:
-                self.__gui.main_panel.info_panel.set_text("Click on a boid to show the infomations about it")
+            self.__gui.main_panel.info_panel.update()
         self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
         
