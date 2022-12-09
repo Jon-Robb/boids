@@ -1185,7 +1185,7 @@ class InfoPanel(ttk.LabelFrame):
             
             self.__set_text(self.__info_string)
         else:
-            self.__set_text("Click on a boid to show the infomations about it")
+            self.__set_text("Click on an entity to show its informations")
     
     @info_entity.setter
     def info_entity(self, entity):
@@ -1450,8 +1450,6 @@ class App(Tk, Updatable):
         self.__gui.main_panel.visual_param_panel.show_fov_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_fov)
         self.__gui.main_panel.visual_param_panel.crazy_mode_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_crazy_mode)
 
-        
-        
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
@@ -1490,7 +1488,8 @@ class App(Tk, Updatable):
         self.__gui.main_panel.control_panel.start_stop_button.config(text="Stop")
         self.__gui.main_panel.control_panel.next_button.config(state="disabled")
         self.__simulation.reset(key)
-
+        self.__simulation.selected_entity = None
+        self.__gui.main_panel.info_panel.info_entity = None
 
     def update_info_panel(self):
         
@@ -1499,7 +1498,7 @@ class App(Tk, Updatable):
     def tick(self):
         if self.__simulation.is_running:
             self.tick_simulation()
-            self.__gui.main_panel.info_panel.update()
+        self.__gui.main_panel.info_panel.update()
         self.__gui.view_window.update_view(self.__simulation)
         self.after(10, self.tick)
         
