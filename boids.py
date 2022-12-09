@@ -1131,8 +1131,8 @@ class InfoPanel(ttk.LabelFrame):
             self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
             self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
             self.__info_string += "Steering force: ({}, {})".format(math.trunc(self.__info_entity.steering_force.x), math.trunc(self.__info_entity.steering_force.y)) + "\n"
-            self.__info_string += "Size: {}".format(math.trunc(self.__info_entity.size)) + "\n"
-            self.__info_string += "Width: {}".format(math.trunc(self.__info_entity.width)) + "\n"
+            if isinstance(self.__info_entity, Circle):
+                self.__info_string += "Radius: {}".format(self.__info_entity.radius) + "\n"
             self.__info_string += "Steering forces: " + "\n"
             if self.__info_entity.steering_behaviors is not None:
                 for steering_behavior in self.__info_entity.steering_behaviors:
