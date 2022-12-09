@@ -1092,9 +1092,13 @@ class ViewWindow(ttk.Label, Drawable):
     def __init__(self, border_color=None, border_width=None, fill_color=None, position=None, size=None):
         ttk.Label.__init__(self, root=None, text=None, width=size.x)
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
-        self.__canvas = Image.new('RGBA', (int(size.x), int(size.y)), (0, 0, 0))
-        self.__image_draw = ImageDraw.Draw(self.__canvas)
-        self.__image_tk = ImageTk.PhotoImage(self.__canvas)
+        self.__background = Image.open("tropicalforest.jpg")
+        self.sizex = size.x
+        self.sizey = size.y
+        #self.__canvas = Image.new('RGBA', (int(size.x), int(size.y)), (0, 0, 0))
+        self.__resized = self.__background.resize((int(size.x), int(size.y)))
+        self.__image_draw = ImageDraw.Draw(self.__resized)
+        self.__image_tk = ImageTk.PhotoImage(self.__resized)
         self.__image_label = ttk.Label(self, image=self.__image_tk)
         # self.__ball = DynamicCircle(position=Vect2D(100,100))
         # self.__ball.draw(self.__image_label, self.__canvas, self.__image_draw)
@@ -1107,8 +1111,8 @@ class ViewWindow(ttk.Label, Drawable):
 
 
     def update_view(self, simulation):
-
-            i = Image.new('RGBA', (int(self.width), int(self.height)), (0, 0, 0))
+            self.__newbackground = Image.open("tropicalforest.jpg")
+            i = self.__newbackground.resize((int(self.sizex), int(self.sizey)))
             draw = ImageDraw.Draw(i)
             
             # for sprite in simulation.sprites:
