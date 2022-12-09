@@ -533,10 +533,10 @@ class Brain():
     def __init__(self, owner, environment, behavior_patterns=None):
         self.__owner = owner
         self.__environment = environment
-
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
                                             "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
+                                            "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" },
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
@@ -798,9 +798,8 @@ class SentientCircle(DynamicCircle):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors)
 
         self.__brain = Brain(self, environment)
-        _id = id(self.__brain)
         
-        self.__eyes = [Eye(self)]
+        self.__eyes = [Eye(self, fov, range)]
 
     def tick(self, time):
         DynamicCircle.tick(self, time)
@@ -826,7 +825,12 @@ class SentientCircle(DynamicCircle):
     @property
     def brain(self):
         return self.__brain
+    
+class PredatorCircle(SentientCircle):
+    def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, slowing_distance=10, steering_force=Vect2D(0,0), steering_behaviors=None, fov=math.pi/2, range=100, environment=None):
+        SentientCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, slowing_distance, steering_force, steering_behaviors, fov, range, environment)
 
+    
 class Simulation(Updatable):
     def __init__(self, size=Vect2D(100,100)):
 
@@ -840,7 +844,7 @@ class Simulation(Updatable):
         self.initialize_scenario()
         
     
-    def initialize_scenario(self, key:str="Predator Chasing Prey"): 
+    def initialize_scenario(self, key:str="Red chasing Green"): 
         key = key.replace("\n", "")
         nb_balls = 0
                 
@@ -961,7 +965,30 @@ class Simulation(Updatable):
                                                         steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)]))
 
 
-            case 'Predator Chasing Prey': # Default
+            # case 'Predator Chasing Prey': # Default
+            #     nb_obstacles = 2
+            #     nb_predators = 2
+            #     nb_preys = 10
+            #     for i in range(nb_predators):
+            #         self.__sprites.append(SentientCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
+            #                                             speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
+            #                                             border_color=RGBAColor(randomize=True),
+            #                                             border_width=5,
+            #                                             acceleration=Vect2D(0,0),
+            #                                             max_speed= 100,
+            #                                             max_steering_force=5,
+            #                                             slowing_distance=10,
+            #                                             steering_force=Vect2D(0,0),
+            #                                             environment=self,
+            #                                            ))
+
+            #     for i, sprite in enumerate(self.__sprites):
+            #         sprite.fill_color = RGBAColor(128, 0, 0, 255) if type(sprite.steering_behaviors[0]) is Pursuit else RGBAColor(0, 128, 0, 255)
+            #         sprite.radius = 60 if type(sprite.steering_behaviors[0]) is Pursuit else 30
+            #         if i%2 == 0 and i != len(self.__sprites) - 1:
+            #             self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
+                        
+            case 'Red chasing Green': # Default
                 nb_balls = 6
                 for i in range(nb_balls):
                     self.__sprites.append(DynamicCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
@@ -982,6 +1009,7 @@ class Simulation(Updatable):
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
 
+
         # self.__sprites.append(SentientCircle(steering_behaviors=[Wander(), BorderRepulsion(sim_dim=self.__size)], environment=self, positsteering_behaviors=ion=Vect2D(random.randrange(0,1000),random.randrange(0,500))))
 
     def tick(self, time):
@@ -989,7 +1017,7 @@ class Simulation(Updatable):
             for sprite in self.__sprites:
                 sprite.tick(time)
 
-    def reset(self, key:str="Predator Chasing Prey"):
+    def reset(self, key:str="Red chasing Green"):
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
@@ -1223,6 +1251,7 @@ class ViewWindow(ttk.Label, Drawable):
                 self.__newbackground = Image.open("tropicalforest.jpg")
                 i = self.__newbackground.resize((int(self.sizex), int(self.sizey)))
                 draw = ImageDraw.Draw(i)
+                
             # for sprite in simulation.sprites:
             #     if self.__speed_is_drawn:
             #         sprite.draw_circle_speed(draw)
@@ -1362,7 +1391,7 @@ class ParamPanel(ttk.LabelFrame):
     def __init__(self, title):
         ttk.LabelFrame.__init__(self, root=None, text=title)
         self.__param_selected = tk.StringVar()
-        self.__param_selected.set("Predator Chasing Prey")
+        self.__param_selected.set("Red chasing Green")
         self.__options_list = Utils.readfile("scenarios.txt")
         self.__combobox = ttk.Combobox(self, values=self.__options_list, textvariable=self.__param_selected, cursor="hand2", style="TCombobox",state="readonly", width=37)
     
