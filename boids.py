@@ -906,7 +906,7 @@ class Simulation(Updatable):
             for sprite in self.__sprites:
                 sprite.tick(time)
 
-    def reset(self, key:str="Predator Cfhasing Prey"):
+    def reset(self, key:str="Predator Chasing Prey"):
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
@@ -1310,6 +1310,8 @@ class App(Tk, Updatable):
         
     def reset_simulation(self, event=None) -> None:
         key = self.__gui.main_panel.param_panel.param_selected
+        self.__gui.main_panel.control_panel.start_stop_button.config(text="Stop")
+        self.__gui.main_panel.control_panel.next_button.config(state="disabled")
         self.__simulation.reset(key)
 
     def tick(self):
