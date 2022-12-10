@@ -1259,7 +1259,7 @@ class InfoPanel(ttk.LabelFrame):
             
             self.__set_text(self.__info_string)
         else:
-            self.__set_text("Click on an entity to show its informations")
+            self.__set_text("Click on an entity to show it's informations")
     
     @info_entity.setter
     def info_entity(self, entity):
@@ -1550,9 +1550,14 @@ class App(Tk, Updatable):
     def mouse_clicked_on_image(self, event):
         clicked_entity = self.__simulation.check_entity_clicked(event)
         if clicked_entity is not None:
-            self.__info_entity = clicked_entity
-            self.__gui.main_panel.info_panel.info_entity = self.__info_entity
-            self.__simulation.selected_entity = clicked_entity
+            if clicked_entity is self.__gui.main_panel.info_panel.info_entity:
+                #self.__info_entity = None
+                self.__gui.main_panel.info_panel.info_entity = None
+                self.__simulation.selected_entity = None
+            else:
+            #self.__info_entity = clicked_entity
+                self.__gui.main_panel.info_panel.info_entity = clicked_entity
+                self.__simulation.selected_entity = clicked_entity
             
 
     def tick_simulation(self, event=None):
