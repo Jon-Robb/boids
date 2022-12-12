@@ -596,6 +596,14 @@ class Brain():
     def seen_entities(self):
         return self.__seen_entities
 
+    @property
+    def behavior_patterns(self):
+        return self.__behavior_patterns
+
+    @behavior_patterns.setter
+    def behavior_patterns(self, value):
+        self.__behavior_patterns = value
+
 class Eye(Drawable):
     def __init__(self, owner:type['Entity'], fov:float=45, range:float=150, vector:Vect2D=None):
         self.__owner = owner
@@ -966,10 +974,36 @@ class Simulation(Updatable):
                                                             max_steering_force=5,
                                                             slowing_distance=10,
                                                             steering_force=Vect2D(0,0),
-                                                            #steering_behaviors=[BorderRepulsion(sim_dim=self.__size)], environment=self
                                                             environment=self
                                                             ))
         
+            case 'Alignment':
+                nb_balls = 50
+
+                behavior_patterns =  {  "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
+                                        "SentientCircle": { "Behavior": Alignment, "Target_type" : "grouping" },
+                                        "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" },
+                                        "Unknown": { "Behavior": Evade, "Target_type" : "single" },
+                                        "No_target": { "Behavior": Wander, "Target_type" : "none" }
+                                    }
+
+                for i in range(nb_balls):
+                                self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(5, 10),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            slowing_distance=10,
+                                                            steering_force=Vect2D(0,0),
+                                                            environment=self
+                                                            ))
+                for sprite in self.__sprites:
+                    sprite.brain.behavior_patterns = behavior_patterns
+
             case "Rise of Sentience":
                 nb_sentients = 10
                 nb_dumbs = 10
@@ -1261,6 +1295,8 @@ class InfoPanel(ttk.LabelFrame):
                     self.__info_string += "    " + str(self.__info_entity.eyes.index(eye)) +" (FOV: " + str(math.trunc(eye.fov)) + ", Range: " + str(eye.range) + "): " + "\n"
                     for seen_entity in self.__info_entity.brain.seen_entities:
                         self.__info_string += "        " + seen_entity.name + ":" + seen_entity.__class__.__name__ + "\n"
+
+            self.__info_string += "\nClick again to hide info."
             
             self.__set_text(self.__info_string)
         else:
