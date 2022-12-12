@@ -613,7 +613,6 @@ class Eye(Drawable):
         return seen_sprites
 
     def is_in_range(self, target:Vect2D)->bool:
-        test= self.__owner.position.distance_from(target.position) - target.radius
         return self.__owner.position.distance_from(target.position) - target.radius <= self.__range
 
     def is_in_fov(self, target:Vect2D)->bool:
@@ -621,7 +620,7 @@ class Eye(Drawable):
         if distance_to_target.is_defined:
             return self.__vector.angle_between_degrees(distance_to_target) <= self.__fov
         else:
-            return False
+            return True
         
     def sees(self, target:type['Entity'])->bool:
         return self.is_in_range(target) and self.is_in_fov(target)
@@ -1287,6 +1286,7 @@ class ViewWindow(ttk.Label, Drawable):
         self.__circle_is_drawn = True
         self.__fov_is_drawn = False
         self.__crazy_mode = False
+        self.__jungle_background = False
 
 
     def update_view(self, simulation):
@@ -1294,7 +1294,10 @@ class ViewWindow(ttk.Label, Drawable):
                 i = self.__resized
                 draw = ImageDraw.Draw(i)
             else:
-                self.__newbackground = Image.open("tropicalforest.jpg")
+                if self.__jungle_background:
+                    self.__newbackground = Image.open("tropicalforest.jpg")
+                else :
+                    self.__newbackground = Image.new('RGBA', (int(self.sizex), int(self.sizey)), (0, 0, 0))
                 i = self.__newbackground.resize((int(self.sizex), int(self.sizey)))
                 draw = ImageDraw.Draw(i)
                 
@@ -1417,6 +1420,9 @@ class ViewWindow(ttk.Label, Drawable):
     def toggle_crazy_mode(self, event):
         self.__crazy_mode = not self.__crazy_mode
 
+    def toggle_jungle_background(self, event):
+        self.__jungle_background = not self.__jungle_background
+
     @property
     def canvas(self):
         return self.__canvas
@@ -1472,6 +1478,9 @@ class VisualParamPanel(ttk.LabelFrame):
         self.__show_fov_var = tk.IntVar()
         self.__show_fov_checkbutton = ttk.Checkbutton(self, text="Show F-o-V", variable=self.__show_fov_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__show_fov_checkbutton.pack(padx=(50, 0))
+        self.__jungle_background_var = tk.IntVar()
+        self.__jungle_background_checkbutton = ttk.Checkbutton(self, text="Jungle background", variable=self.__jungle_background_var, onvalue=1, offvalue=0, width=self.__width_var)
+        self.__jungle_background_checkbutton.pack(padx=(50, 0))
         self.__crazy_mode_var = tk.IntVar()
         self.__crazy_mode_checkbutton = ttk.Checkbutton(self, text="Crazy Mode", variable=self.__crazy_mode_var, onvalue=1, offvalue=0, width=self.__width_var)
         self.__crazy_mode_checkbutton.pack(padx=(50, 0))
@@ -1496,6 +1505,10 @@ class VisualParamPanel(ttk.LabelFrame):
     @property
     def crazy_mode_checkbutton(self):
         return self.__crazy_mode_checkbutton
+
+    @property
+    def jungle_background_checkbutton(self):
+        return self.__jungle_background_checkbutton
     
 class SimParamPanel(ParamPanel):
     def __init__(self):
@@ -1524,7 +1537,7 @@ class App(Tk, Updatable):
         self.__gui.main_panel.visual_param_panel.show_circle_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_circle)
         self.__gui.main_panel.visual_param_panel.show_fov_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_draw_fov)
         self.__gui.main_panel.visual_param_panel.crazy_mode_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_crazy_mode)
-
+        self.__gui.main_panel.visual_param_panel.jungle_background_checkbutton.bind('<Button-1>', self.__gui.view_window.toggle_jungle_background)
         self.__gui.view_window.image_label.bind('<Enter>', self.__simulation.mouse_entered)
         self.__gui.view_window.image_label.bind('<Motion>', self.__simulation.move_mouse)
         self.__gui.view_window.image_label.bind('<Leave>', self.__simulation.mouse_left)
