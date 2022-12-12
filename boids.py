@@ -697,7 +697,13 @@ class Entity(Drawable, Updatable):
                                 "Mathias", "Albert", "Maxime", "Enzo", "Jordan", "Julien",
                                 "Simon", "Loik", "Michael", "Ayden", "Daniel", "Tom", "Jack",
                                 "Joshua", "Maverick", "Adrien", "Lyam", "Mateo", "Remi", "Elias",
-                                "Gertrude", "Denis", "Donald", "Jonathan", "Andrejz"]
+                                "Gertrude", "Denis", "Donald", "Jonathan", "Andrzej", "Marius",
+                                "Marek", "Marcin", "Maciej", "Piotr", "Pawel", "Piotrek", "Pawel",
+                                "Julie", "Juliette", "Juliet", "Julia", "Juliana", "June", "Valerie",
+                                "Valeria", "Zoe", "Chanel", "Chloe", "Charlotte", "Celine", "Cecile",
+                                "Martha", "Marie", "Marion", "Marina", "Marine", "Maria", "Marianne",
+                                "Diana", "Diane", "Gertrude", "Geraldine", "Alexandra", "Alexandria",
+                                "Alexandrine", "Alexia", "Huguette", "Marguerite", "Margot", "Molly"]
         
         #get a random name from the list
         self.__name = random.choice(self.__available_names)
