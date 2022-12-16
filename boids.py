@@ -552,7 +552,7 @@ class Piloted():
         self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
 
-    def steer(self):
+    def steer(self) -> None:
         ''' 
         The steer function helps to set the steering force for each boids.
 
