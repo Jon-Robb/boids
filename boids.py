@@ -551,10 +551,7 @@ class Piloted():
         self.__max_steering_force = max_steering_force
         self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
-
-    def steer(self) -> None:
-        ''' 
-        The steer function helps to set the steering force for each boids.
+    '''   The steer function helps to set the steering force for each boids.
 
         Example:
         >>> dynamiccircle = DynamicCircle( border_color=RGBAColor(randomize=True),
@@ -570,8 +567,10 @@ class Piloted():
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size)])
         >>> dynamiccircle.steer()
         >>> print(dynamiciircle is not None)
-        True
-        '''
+        True'''
+    def steer(self) -> None:
+  
+        
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
                 self.steering_force.set(self.steering_force.x + steering_behavior.behave(origin_entity=self).x, self.steering_force.y + steering_behavior.behave(origin_entity=self).y)
@@ -1955,5 +1954,5 @@ def __main_doctest():
     doctest.testmod()#verbose=True)
 
 if __name__ == '__main__':
-    # __main_doctest()
+    __main_doctest()
     main()
