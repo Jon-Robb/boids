@@ -283,7 +283,7 @@ class BorderRepulsion(SteeringBehavior):
 
 
 class EntityRepulsion(SteeringBehavior):
-    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force:int=500000):
+    def __init__(self, target_entities:list[type['Entity']|type['Vect2D']], attraction_repulsion_force:int=2000000000):
         SteeringBehavior.__init__(self, attraction_repulsion_force=attraction_repulsion_force)
     
         self.__target_entities = target_entities
@@ -552,7 +552,7 @@ class Brain():
                 values = self.__behavior_patterns[key]
                 if values["Target_type"] == "single":
                     for seen_entity in self.__seen_entities:
-                        if self.__behavior_patterns[seen_entity.__class__.__name__] == key:
+                        if seen_entity.__class__.__name__ == key:
                             behavior = self.__behavior_patterns[seen_entity.__class__.__name__]["Behavior"]
                             self.__active_behaviors.append(behavior([seen_entity]))
                 elif values["Target_type"] == "grouping":
@@ -1045,7 +1045,28 @@ class Simulation(Updatable):
                 for _ in range(nb_obstacles):
                     self.__sprites.append(Circle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height)))))
             
+            case 'Avoid Obstacles':
+                nb_obstacles = 10
+                nb_sentient_circles = 1
                         
+                for _ in range(nb_obstacles):
+                    self.__sprites.append(Circle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height)))))
+
+                for _ in range(nb_sentient_circles):
+                    self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
+                    border_width=5,
+                    radius=10,
+                    fill_color=RGBAColor(randomize=True),
+                    position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                    acceleration=Vect2D(0,0),
+                    speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                    max_speed= 100,
+                    max_steering_force=5,
+                    steering_force=Vect2D(0,0),
+                    environment=self
+                    ))
+
+
             case 'Red chasing Green': # Default
                 nb_balls = 6
                 for i in range(nb_balls):
@@ -1316,60 +1337,72 @@ class ViewWindow(ttk.Label, Drawable):
                     if hasattr(sprite, 'draw_fov'):
                         sprite.draw_fov(draw)                     
                     sprite.draw(draw)
-                    sprite.draw_circle_speed(draw)
-                    sprite.draw_circle_steering_force(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
+                        sprite.draw_circle_steering_force(draw)
                    
             elif self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     sprite.draw(draw)
-                    sprite.draw_circle_speed(draw)
-                    sprite.draw_circle_steering_force(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
+                        sprite.draw_circle_steering_force(draw)
             elif self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
-                        sprite.draw_fov(draw)                    
-                    sprite.draw_circle_speed(draw)
-                    sprite.draw_circle_steering_force(draw)
+                        sprite.draw_fov(draw)   
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
+                        sprite.draw_circle_steering_force(draw)                 
             elif self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
-                    sprite.draw_circle_steering_force(draw)
-                    sprite.draw_circle_speed(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
+                        sprite.draw_circle_steering_force(draw)
             elif self.__speed_is_drawn and not self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
                         sprite.draw_fov(draw)                         
                     sprite.draw(draw)
-                    sprite.draw_circle_speed(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
             elif self.__speed_is_drawn and not self.__steering_force_is_drawn and self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     sprite.draw(draw)
-                    sprite.draw_circle_speed(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
             elif self.__speed_is_drawn and not self.__steering_force_is_drawn and not self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
                         sprite.draw_fov(draw)
-                    sprite.draw_circle_speed(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
             elif self.__speed_is_drawn and not self.__steering_force_is_drawn and not self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
-                    sprite.draw_circle_speed(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_speed(draw)
             elif not self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
                         sprite.draw_fov(draw)
                     sprite.draw(draw)
-                    sprite.draw_circle_steering_force(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_steering_force(draw)
             elif not self.__speed_is_drawn and self.__steering_force_is_drawn and self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     sprite.draw(draw)
-                    sprite.draw_circle_steering_force(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_steering_force(draw)
             elif not self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
-                        sprite.draw_fov(draw)                    
-                    sprite.draw_circle_steering_force(draw)
+                        sprite.draw_fov(draw) 
+                    if hasattr(sprite, "draw_circle_speed"):                   
+                        sprite.draw_circle_steering_force(draw)
             elif not self.__speed_is_drawn and self.__steering_force_is_drawn and not self.__circle_is_drawn and not self.__fov_is_drawn:
                 for sprite in simulation.sprites:
-                    sprite.draw_circle_steering_force(draw)
+                    if hasattr(sprite, "draw_circle_speed"):
+                        sprite.draw_circle_steering_force(draw)
             elif not self.__speed_is_drawn and not self.__steering_force_is_drawn and self.__circle_is_drawn and self.__fov_is_drawn:
                 for sprite in simulation.sprites:
                     if hasattr(sprite, 'draw_fov'):
@@ -1385,8 +1418,9 @@ class ViewWindow(ttk.Label, Drawable):
                         
             if simulation.selected_entity:
                 simulation.selected_entity.draw(draw)
-                simulation.selected_entity.draw_circle_speed(draw)                
-                simulation.selected_entity.draw_circle_steering_force(draw)    
+                if hasattr(simulation.selected_entity, "draw_circle_speed"):
+                    simulation.selected_entity.draw_circle_speed(draw)                
+                    simulation.selected_entity.draw_circle_steering_force(draw)    
                 if hasattr(simulation.selected_entity, 'draw_fov'):
                     simulation.selected_entity.draw_fov(draw)
         

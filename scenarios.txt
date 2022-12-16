@@ -6,3 +6,4 @@ Seek or Flee Mouse
 Cohesion
 Rise of Sentience
 Alignment
+Avoid Obstacles
