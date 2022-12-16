@@ -938,6 +938,44 @@ class Circle(Entity):
 
 class DynamicCircle(Circle, Movable, Piloted):
     
+    """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
+        
+        Args:
+            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
+            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
+            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
+            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
+            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
+            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
+            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
+            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
+            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
+            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
+            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
+            
+        Exemple:
+            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), max_speed=100, max_steering_force=50)
+            >>> print(isinstance(dynamic_circle, DynamicCircle))
+            True
+            >>> print(dynamic_circle.position.x, dynamic_circle.position.y)
+            100.0 100.0
+            >>> print(dynamic_circle.speed.x, dynamic_circle.speed.y)
+            10.0 10.0
+            >>> print(dynamic_circle.max_speed)
+            100     
+            >>> print(dynamic_circle.max_steering_force)
+            50
+            >>> print(dynamic_circle.radius)
+            50
+            >>> print(isinstance(dynamic_circle, DynamicCircle))
+            True
+            >>> print(isinstance(dynamic_circle, Circle))
+            True
+            >>> print(isinstance(dynamic_circle, Movable))
+            True  
+        """
+            
+    
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     border_width=5,
@@ -955,41 +993,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, steering_force, steering_behaviors)
         
-        """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
         
-        Args:
-            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
-            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
-            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
-            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
-            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
-            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
-            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
-            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
-            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
-            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
-            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
-            
-        Exemple:
-            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), steering_behaviors=[SeekBehavior(Vect2D(500,500))]
-            >>> print(dynamic_circle.position)
-            (100, 100)
-            >>> print(dynamic_circle.speed)
-            (10)
-            >>> print(dynamic_circle.max_speed)
-            100     
-            >>> print(dynamic_circle.max_steering_force)
-            50
-            >>> print(dynamic_circle.radius)
-            50
-            >>> print(type(dynamic_circle))
-            Entity
-            >>> print(type(dynamic_circle.position))
-            Vect2D
-            >>> print(type(dynamic_circle.speed))
-            Vect2D  
-        """
-            
     def draw(self, draw:ImageDraw):
         """Methode generique de dessin d'un cercle dynamique
 
@@ -1955,5 +1959,5 @@ def __main_doctest():
     doctest.testmod()#verbose=True)
 
 if __name__ == '__main__':
-    # __main_doctest()
-    main()
+    __main_doctest()
+    # main()
