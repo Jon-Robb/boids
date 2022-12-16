@@ -754,6 +754,20 @@ class Entity(Drawable, Updatable):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
         
+        """L'entity est un objet qui peut être dessiné et qui peut être mis à jour
+        
+        Args:
+            border_color (RGBAColor): Couleur de la bordure
+            border_width (int): Epaisseur de la bordure
+            fill_color (RGBAColor): Couleur de remplissage
+            position (Vect2D): Position de l'entity
+            size (Vect2D): Taille de l'entity
+            
+            >>> entity = Entity(RGBAColor(255, 0, 0), 1, RGBAColor(0, 0, 255), Vect2D(0, 0), Vect2D(100, 100))
+            >>> print(entity)        
+            
+        """
+    
         self.__available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
                                 "Raphael", "Nathan", "Leo", "Alexis", "Emile", "Edouard",
                                 "Felix", "Samuel", "Olivier", "Gabriel", "Charles", "Antoine",
@@ -798,7 +812,8 @@ class Circle(Entity):
     def __init__(self, border_color = RGBAColor(randomize=True), border_width = 5, fill_color = RGBAColor(0,0,0,255),  position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius:int=50):
         Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
         self.__radius = radius
-
+        
+    
     @property
     def radius(self):
         return self.__radius
@@ -824,6 +839,7 @@ class Circle(Entity):
 
 
 class DynamicCircle(Circle, Movable, Piloted):
+    
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     border_width=5,
@@ -837,27 +853,75 @@ class DynamicCircle(Circle, Movable, Piloted):
                     steering_force=Vect2D(0,0),
                     steering_behaviors=None,
                 ):
-    
         Circle.__init__(self, border_color, border_width, fill_color, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, steering_force, steering_behaviors)
         
-    def draw(self, draw):
+        """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
+        
+        Args:
+            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
+            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
+            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
+            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
+            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
+            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
+            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
+            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
+            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
+            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
+            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
+            
+        Exemple:
+            >>> dynamic_circle = DynamicCircle()
+            >>> dynamic_circle.draw()
+            >>> dynamic_circle.tick(1)
+            >>> dynamic_circle.draw_circle_speed()
+            >>> dynamic_circle.draw_circle_steering_force()
+            >>> dynamic_circle.move(1)
+        """
+            
+    def draw(self, draw:ImageDraw):
+        """Methode generique de dessin d'un cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objet necessaire pour dessiner sur une image
+        """
         Circle.draw(self, draw)
 
-    def draw_circle_speed(self, draw):
+    def draw_circle_speed(self, draw:ImageDraw):
+        """Methode de dessin de la vitesse du cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objet necessaire pour dessiner sur une image
+        """
         draw.line([self.position.x, self.position.y, self.position.x + self.speed.x, self.position.y + self.speed.y], fill="red", width=5)
         
-    def draw_circle_steering_force(self, draw):
+    def draw_circle_steering_force(self, draw:ImageDraw):
+        """Methode de dessin de la force de déplacement du cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objwet necessaire pour dessiner sur une image
+        """
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
             
     def move(self, time):
+        """Method qui permet de déplacer le cercle dynamique
+
+        Args:
+            time (float): Unité de temps
+        """
         Movable.move(self, time)
 
     def tick(self, time):
+        """Methode qui permet de faire évoluer le cercle dynamique
+
+        Args:
+            time (float): Unité de temps
+        """
         self.steer()
         self.move(time)
 
@@ -866,8 +930,10 @@ class SentientCircle(DynamicCircle):
     def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, steering_force=Vect2D(0,0), steering_behaviors=None, environment=None, brain=None, eyes=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, steering_force, steering_behaviors)
 
-        self.__brain = brain if brain else Brain(self, environment)
-        
+        """Création d'un cercle intelligent, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement et qui peut voir et interagir avec son environnement
+        """
+
+        self.__brain = brain if brain else Brain(self, environment)  
         self.__eyes = eyes if eyes else [Eye(self)]
 
     def tick(self, time):
@@ -936,6 +1002,24 @@ class PreyCircle(SentientCircle):
 
 
 class Simulation(Updatable):
+    """ La classe Simulation correspond à la simulation elle-même. 
+        Elle contient les sprites, la taille de l'image, la position de la souris, et la boucle de jeu qui bouge les Entities.
+        Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
+       
+        Args:
+            - :param size: Vect2D, la taille de la fenêtre
+            - :param sprites: list, la liste des sprites
+            - :param mouse_pos: Vect2D, la position de la souris
+            - :param is_running: bool, True si la simulation est en cours, False sinon
+            - :param seed: int, le seed pour la génération aléatoire
+            - :param selected_entity: Entity, l'entité sélectionnée par le click de la souris
+        
+        Exemples: Créé une simulation et l'initialise un scénario
+        >>> sim = Simulation()
+        >>> sim.initialize_scenario(key="Seek, Flee or Wander")
+        >>> print(len(sim.sprites))
+        250
+    """
     def __init__(self, size=Vect2D(100,100)):
         self.__size = size
         self.__sprites = []
@@ -1192,66 +1276,81 @@ class Simulation(Updatable):
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
     def tick(self, time):
+        """Fait bouger les Entities, est appelée par la fonction update() de la classe App"""
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
 
     def reset(self, key:str="Red chasing Green"):
+        """Remet la simulation à zéro"""
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
 
     def move_mouse(self, event):
+        """Met à jour la position de la souris"""
         self.__mouse_pos.set(event.x, event.y)
         
     def mouse_left(self, event):
+        """Gère la sortie de la souris de la fenêtre"""
         self.__mouse_pos.set(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
+        """Gère l'entrée de la souris dans la fenêtre"""
         self.__mouse_pos.set(event.x, event.y)
         
     def toggle_running(self, event):
+        """Met en pause ou en reprend la simulation"""
         self.__is_running = not self.__is_running
         
     def check_entity_clicked(self, event):
+        """Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click"""
         radius_offset = 20
         for sprite in reversed(self.__sprites):
             if sprite.position.x - (sprite.radius + radius_offset) < event.x < sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) < event.y < sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
 
-    @property  
+    @property
     def selected_entity(self):
+        """Retourne l'entité sélectionnée"""
         return self.__selected_entity
     
     @selected_entity.setter
     def selected_entity(self, value):
+        """Définit l'entité sélectionnée"""
         self.__selected_entity = value
 
     @property
     def sprites(self):
+        """Retourne la liste des sprites"""
         return self.__sprites
     
     @property
     def mouse_pos(self):
+        """Retourne la position de la souris"""
         return self.__mouse_pos
     
     @property
     def size(self):
+        """Retourne la taille de la fenêtre"""
         return self.__size
 
     @property
     def width(self):
+        """Retourne la largeur de la fenêtre"""
         return self.__size.x
 
     @property
     def height(self):
+        """Retourne la hauteur de la fenêtre"""
         return self.__size.y
     
     @property
     def is_running(self):
+        """Retourne True si la simulation est en cours, False sinon"""
         return self.__is_running
 
 
