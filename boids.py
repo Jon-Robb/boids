@@ -645,6 +645,11 @@ class Brain():
     - `Brain.__seen_entities` : la liste des entités vues par le cerveau
     - `Brain.__active_behaviors` : la liste des comportements actifs
     - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
+
+    Exemple d'utilisation :
+        >>> brain = Brain(SentientCircle(), Simulation())
+        >>> print(isinstance(brain, Brain))
+        True
     """
     def __init__(self, owner:type["Entity"], environment:type["Simulation"], behavior_patterns:dict[dict[str]]=None):
         """
@@ -655,11 +660,6 @@ class Brain():
             owner (Entity): l'entité propriétaire
             environment (Environment): l'environnement dans lequel évolue l'entité
             behavior_patterns (dict, optional): la liste des patterns de comportement. Defaults to None.
-
-        Exemple d'utilisation :
-            >>> brain = Brain(owner, environment)
-            >>> print(brain.behavior_patterns)
-            { "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" }, "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" }, "Unknown": { "Behavior": Evade, "Target_type" : "single" }, "No_target": { "Behavior": Wander, "Target_type" : "none" } }
         """
         self.__owner = owner
         """
@@ -727,7 +727,7 @@ class Brain():
             self.__active_behaviors.append(behavior())
         self.behave()
 
-    def draw_line_to_seen_entities(self, draw:ImageDraw) -> None:
+    def draw_line_to_seen_entities(self, draw) -> None:
         """
         Dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu.
         """
