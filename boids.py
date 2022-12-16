@@ -232,7 +232,7 @@ class Wander(Seek):
     def draw(self, draw):
         for target_entity in self.target_entities:
             draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="blue")
-            draw.ellipse([target_entity.x - 5, target_entity.y - 5, target_entity.x + 5, target_entity.y + 5], fill="cyan")
+            draw.ellipse([target_entity.x - 5, target_entity.y - 5, target_entity.x + 5, target_entity.y + 5], fill="purple")
         
     @property
     def circle_distance(self):
@@ -544,19 +544,9 @@ class Piloted():
     Args:
     self.__max_steering_force (int): la force maximal de direction .
     self.steering_force (Vect2D): la force de direction.
-    self.__steering_behaviors (list[SteeringBehavior]): la liste des Steering Behaviors.
+    self.__steering_behaviors (list[SteeringBehavior]): la liste des Steering Behaviors.     
     
-    '''
-    def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
-        self.__max_steering_force = max_steering_force
-        self.steering_force = steering_force
-        self.__steering_behaviors = steering_behaviors
-
-    def steer(self) -> None:
-        ''' 
-        The steer function helps to set the steering force for each boids.
-
-        Example:
+    Example:
         >>> dynamiccircle = DynamicCircle( border_color=RGBAColor(randomize=True),
                                                             border_width=5,
                                                             fill_color=RGBAColor(randomize=True),
@@ -569,9 +559,21 @@ class Piloted():
                                                             steering_force=Vect2D(0,0),
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size)])
         >>> dynamiccircle.steer()
-        >>> print(dynamiciircle is not None)
+        >>> print(dynamicircle is not None)
         True
+    
+    '''
+    def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
+        self.__max_steering_force = max_steering_force
+        self.steering_force = steering_force
+        self.__steering_behaviors = steering_behaviors
+
+   
+    def steer(self) -> None:
+        '''   The steer function helps to set the steering force for each boids.
         '''
+
+        
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
                 self.steering_force.set(self.steering_force.x + steering_behavior.behave(origin_entity=self).x, self.steering_force.y + steering_behavior.behave(origin_entity=self).y)
@@ -1966,4 +1968,4 @@ def __main_doctest():
 
 if __name__ == '__main__':
     __main_doctest()
-    # main()
+    main()
