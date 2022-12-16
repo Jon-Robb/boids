@@ -145,7 +145,41 @@ class Seek(SteeringBehavior):
                     sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
      
-            
+class FollowBiggestBoidSeen(SteeringBehavior):
+    """
+    This class is used to create a follow biggest boid steering behavior object.
+    It is a child class of the SteeringBehavior class.
+    It will follow the biggest boid in the field of view or will not apply any force if the biggest boid is too small.
+    """
+    def __init__(self, target_entities:type['Entity']=None, attraction_repulsion_force:int=1, minimum_boids_radius:float=5.0): 
+        SteeringBehavior.__init__(self, target_entities, attraction_repulsion_force)
+        self.minimum_boids_radius = minimum_boids_radius
+
+    """
+    This function is used to calculate the force to apply to the boid.
+    It is a child function of the SteeringBehavior class.
+    """
+    def behave(self, origin_entity: type['Entity']) -> Vect2D:
+        sum_of_forces = Vect2D(0, 0)
+        biggest_boid = None
+        for target_entity in self.target_entities:
+            if target_entity is not None:
+                if biggest_boid is None:
+                    biggest_boid = target_entity
+                elif biggest_boid.radius < target_entity.radius:
+                    biggest_boid = target_entity
+        if biggest_boid is not None:
+            if biggest_boid.radius > self.minimum_boids_radius:
+                target_position = biggest_boid.position - biggest_boid.speed.normalized * 1.5 * biggest_boid.radius
+                distance = (target_position - origin_entity.position).length
+                new_maximum_speed = biggest_boid.original_max_speed * (1 + min(100, distance) / 100.0 * 0.25)
+                origin_entity.max_speed = new_maximum_speed
+                desired_speed = (target_position - origin_entity.position).normalized * origin_entity.max_speed
+                sum_of_forces += desired_speed - origin_entity.speed * self.attraction_repulsion_force
+            else:
+                origin_entity.max_speed = origin_entity.original_max_speed
+        return sum_of_forces
+
 class Wander(Seek):
     def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force:int=1):
         super().__init__(attraction_repulsion_force=attraction_repulsion_force)
@@ -453,6 +487,7 @@ class Movable():
         self.__acceleration = acceleration
         self.__speed = speed
         self.__max_speed = max_speed
+        self.__original_max_speed = max_speed
 
     def move(self, time):
         self.position.set(self.position.x + self.speed.x * time + self.acceleration.x * 0.5 ** 2 * time, self.position.y + self.speed.y * time + self.acceleration.y * 0.5 ** 2 * time)
@@ -464,6 +499,14 @@ class Movable():
     @property
     def max_speed(self):
         return self.__max_speed
+
+    @max_speed.setter
+    def max_speed(self, max_speed):
+        self.__max_speed = max_speed
+
+    @property
+    def original_max_speed(self):
+        return self.__original_max_speed
 
     @property
     def speed(self):
@@ -982,6 +1025,38 @@ class Simulation(Updatable):
                                                             ))
                 for sprite in self.__sprites:
                     sprite.brain.behavior_patterns = behavior_patterns
+
+
+            case 'Follow Biggest Boid Seen':
+                nb_balls = 50
+
+                behavior_patterns =  {  "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
+                                        "SentientCircle": { "Behavior": FollowBiggestBoidSeen, "Target_type" : "grouping" },
+                                        "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" },
+                                        "Unknown": { "Behavior": Evade, "Target_type" : "single" },
+                                        "No_target": { "Behavior": Wander, "Target_type" : "none" }
+                                    }
+                eye_fov = 500
+                eye_range = 150
+
+                for i in range(nb_balls):
+                                self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(5, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            steering_force=Vect2D(0,0),
+                                                            environment=self
+                                                            ))
+
+                for sprite in self.__sprites:
+                    sprite.brain.behavior_patterns = behavior_patterns
+                    sprite.eye.fov = eye_fov
+                    sprite.eye.range = eye_range
 
             case "Rise of Sentience":
                 nb_sentients = 10
