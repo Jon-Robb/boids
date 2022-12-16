@@ -958,12 +958,23 @@ class DynamicCircle(Circle, Movable, Piloted):
             - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
             
         Exemple:
-            >>> dynamic_circle = DynamicCircle()
-            >>> dynamic_circle.draw()
-            >>> dynamic_circle.tick(1)
-            >>> dynamic_circle.draw_circle_speed()
-            >>> dynamic_circle.draw_circle_steering_force()
-            >>> dynamic_circle.move(1)
+            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), steering_behaviors=[SeekBehavior(Vect2D(500,500))]
+            >>> print(dynamic_circle.position)
+            (100, 100)
+            >>> print(dynamic_circle.speed)
+            (10)
+            >>> print(dynamic_circle.max_speed)
+            100     
+            >>> print(dynamic_circle.max_steering_force)
+            50
+            >>> print(dynamic_circle.radius)
+            50
+            >>> print(type(dynamic_circle))
+            Entity
+            >>> print(type(dynamic_circle.position))
+            Vect2D
+            >>> print(type(dynamic_circle.speed))
+            Vect2D  
         """
             
     def draw(self, draw:ImageDraw):
@@ -1929,5 +1940,5 @@ def __main_doctest():
     doctest.testmod()#verbose=True)
 
 if __name__ == '__main__':
-    __main_doctest()
+    # __main_doctest()
     main()
