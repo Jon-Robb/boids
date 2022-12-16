@@ -525,6 +525,7 @@ class Movable():
 
 class Piloted():
     '''
+    Thomas Pelletier
     Piloted représente la capacité à un cercle dynamique d'être influencé par un Steering Behaviour.
 
     Args:
@@ -555,10 +556,8 @@ class Piloted():
                                                             steering_force=Vect2D(0,0),
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size)])
         >>> dynamiccircle.steer()
-        >>> print(dynamiccircle)
-
-
-
+        >>> print(dynamiciircle is not None)
+        True
         '''
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
