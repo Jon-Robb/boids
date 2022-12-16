@@ -173,7 +173,6 @@ class Seek(SteeringBehavior):
                     sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
      
-
 class FollowBiggestBoidSeen(SteeringBehavior):
     &#34;&#34;&#34;
     This class is used to create a follow biggest boid steering behavior object.
@@ -208,7 +207,6 @@ class FollowBiggestBoidSeen(SteeringBehavior):
             else:
                 origin_entity.max_speed = origin_entity.original_max_speed
         return sum_of_forces
-
 
 class Wander(Seek):
     def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force:int=1):
@@ -596,43 +594,6 @@ class Updatable():
 # |  `----.|  `--&#39;  | |  |  |  | |  |      |  `--&#39;  | |  |\   | |  |____ |  |\   |     |  |    .----)   |   
 #  \______| \______/  |__|  |__| | _|       \______/  |__| \__| |_______||__| \__|     |__|    |_______/    
 class Brain():
-    &#34;&#34;&#34;Cette classe représente  un cerveau appartenant à un objet propriétaire. 
-    Il est responsable de la collecte d&#39;informations en provenance des capteurs du propriétaire, et de la prise de décision de l&#39;entité.
-    Il est composé de patterns de comportement, qui sont des couples (cible, comportement) qui sont appliqués à l&#39;entité en fonction de la cible que le cerveau détecte.
-    
-    Il existe plusieurs façons de **créer** un `Brain` :
-    
-    - `Brain(owner, environment, behavior_patterns)`
-    - `Brain(owner, environment)`
-
-    Les **propriétés** (accesseurs et mutateurs) sont :
-
-    - `Brain.active_behaviors` [lecture] : retourne la liste des comportements actifs
-    - `Brain.seen_entities` [lecture] : retourne la liste des entités vues par le cerveau
-    - `Brain.behavior_patterns` [lecture/écriture] : la liste des patterns de comportement
-
-    Les **méthodes** sont :
-
-    - `Brain.process()` : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants
-    - `Brain.behave()` : applique les comportements actifs sur le propriétaire
-    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l&#39;entité propriétaire
-
-    Les **attributs** sont :
-
-    - `Brain.__owner` : l&#39;entité propriétaire
-    - `Brain.__environment` : l&#39;environnement dans lequel évolue l&#39;entité
-    - `Brain.__behavior_patterns` : la liste des patterns de comportement
-    - `Brain.__seen_entities` : la liste des entités vues par le cerveau
-    - `Brain.__active_behaviors` : la liste des comportements actifs
-    - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
-
-    Exemple d&#39;utilisation :
-
-    &gt;&gt;&gt; brain = Brain(owner, environment)
-    &gt;&gt;&gt; print(brain.behavior_patterns)
-    { &#34;DynamicCircle&#34;: { &#34;Behavior&#34;: Evade, &#34;Target_type&#34; : &#34;single&#34; }, &#34;SentientCircle&#34;: { &#34;Behavior&#34;: Cohesion, &#34;Target_type&#34; : &#34;grouping&#34; }, &#34;Circle&#34;: { &#34;Behavior&#34;: EntityRepulsion, &#34;Target_type&#34; : &#34;single&#34; }, &#34;Unknown&#34;: { &#34;Behavior&#34;: Evade, &#34;Target_type&#34; : &#34;single&#34; }, &#34;No_target&#34;: { &#34;Behavior&#34;: Wander, &#34;Target_type&#34; : &#34;none&#34; } }
-
-    &#34;&#34;&#34;
     def __init__(self, owner, environment, behavior_patterns=None):
         self.__owner = owner
         self.__environment = environment
@@ -918,7 +879,6 @@ class SentientCircle(DynamicCircle):
 
     def draw_circle_steering_force(self, draw):
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill=&#34;darkgoldenrod&#34;, width=5)
-        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill=&#34;darkgoldenrod&#34;, width=5)
         for steering_behavior in self.__brain.active_behaviors:
             if hasattr(steering_behavior, &#34;draw&#34;):
                     steering_behavior.draw(draw)
@@ -974,6 +934,24 @@ class PreyCircle(SentientCircle):
 
 
 class Simulation(Updatable):
+    &#34;&#34;&#34; La classe Simulation correspond à la simulation elle-même. 
+        Elle contient les sprites, la taille de l&#39;image, la position de la souris, et la boucle de jeu qui bouge les Entities.
+        Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
+       
+        Args:
+            - :param size: Vect2D, la taille de la fenêtre
+            - :param sprites: list, la liste des sprites
+            - :param mouse_pos: Vect2D, la position de la souris
+            - :param is_running: bool, True si la simulation est en cours, False sinon
+            - :param seed: int, le seed pour la génération aléatoire
+            - :param selected_entity: Entity, l&#39;entité sélectionnée par le click de la souris
+        
+        Exemples: Créé une simulation et l&#39;initialise un scénario
+        &gt;&gt;&gt; sim = Simulation()
+        &gt;&gt;&gt; sim.initialize_scenario(key=&#34;Seek, Flee or Wander&#34;)
+        &gt;&gt;&gt; print(len(sim.sprites))
+        250
+    &#34;&#34;&#34;
     def __init__(self, size=Vect2D(100,100)):
         self.__size = size
         self.__sprites = []
@@ -1230,66 +1208,81 @@ class Simulation(Updatable):
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
     def tick(self, time):
+        &#34;&#34;&#34;Fait bouger les Entities, est appelée par la fonction update() de la classe App&#34;&#34;&#34;
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
 
     def reset(self, key:str=&#34;Red chasing Green&#34;):
+        &#34;&#34;&#34;Remet la simulation à zéro&#34;&#34;&#34;
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
 
     def move_mouse(self, event):
+        &#34;&#34;&#34;Met à jour la position de la souris&#34;&#34;&#34;
         self.__mouse_pos.set(event.x, event.y)
         
     def mouse_left(self, event):
+        &#34;&#34;&#34;Gère la sortie de la souris de la fenêtre&#34;&#34;&#34;
         self.__mouse_pos.set(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
+        &#34;&#34;&#34;Gère l&#39;entrée de la souris dans la fenêtre&#34;&#34;&#34;
         self.__mouse_pos.set(event.x, event.y)
         
     def toggle_running(self, event):
+        &#34;&#34;&#34;Met en pause ou en reprend la simulation&#34;&#34;&#34;
         self.__is_running = not self.__is_running
         
     def check_entity_clicked(self, event):
+        &#34;&#34;&#34;Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click&#34;&#34;&#34;
         radius_offset = 20
         for sprite in reversed(self.__sprites):
             if sprite.position.x - (sprite.radius + radius_offset) &lt; event.x &lt; sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) &lt; event.y &lt; sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
 
-    @property  
+    @property
     def selected_entity(self):
+        &#34;&#34;&#34;Retourne l&#39;entité sélectionnée&#34;&#34;&#34;
         return self.__selected_entity
     
     @selected_entity.setter
     def selected_entity(self, value):
+        &#34;&#34;&#34;Définit l&#39;entité sélectionnée&#34;&#34;&#34;
         self.__selected_entity = value
 
     @property
     def sprites(self):
+        &#34;&#34;&#34;Retourne la liste des sprites&#34;&#34;&#34;
         return self.__sprites
     
     @property
     def mouse_pos(self):
+        &#34;&#34;&#34;Retourne la position de la souris&#34;&#34;&#34;
         return self.__mouse_pos
     
     @property
     def size(self):
+        &#34;&#34;&#34;Retourne la taille de la fenêtre&#34;&#34;&#34;
         return self.__size
 
     @property
     def width(self):
+        &#34;&#34;&#34;Retourne la largeur de la fenêtre&#34;&#34;&#34;
         return self.__size.x
 
     @property
     def height(self):
+        &#34;&#34;&#34;Retourne la hauteur de la fenêtre&#34;&#34;&#34;
         return self.__size.y
     
     @property
     def is_running(self):
+        &#34;&#34;&#34;Retourne True si la simulation est en cours, False sinon&#34;&#34;&#34;
         return self.__is_running
 
 
@@ -1305,7 +1298,6 @@ class GUI(ttk.Frame, Drawable):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar()
-        # self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)
         self.__view_window = ViewWindow(size=Vect2D(size.x, size.y), fill_color=fill_color)
         self.__main_panel.grid(row=0, column=1)
         self.__view_window.grid(row=0, column=1, rowspan=4, sticky=&#34;ns&#34;)
@@ -1317,7 +1309,6 @@ class GUI(ttk.Frame, Drawable):
     @property
     def view_window(self):
         return self.__view_window
-
 
 class ControlBar(ttk.Frame):
     def __init__(self):
@@ -1346,7 +1337,6 @@ class ControlBar(ttk.Frame):
     @property
     def info_panel(self):
         return self.__Info_panel
-
 
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
@@ -1769,7 +1759,6 @@ class App(Tk, Updatable):
     @property
     def height(self):
         return self.__size.y
-
 
 def main():
     App()
@@ -2213,83 +2202,12 @@ It is an abstract class. It contains a abstract method called behave() that is u
 <span>(</span><span>owner, environment, behavior_patterns=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Cette classe représente
-un cerveau appartenant à un objet propriétaire.
-Il est responsable de la collecte d'informations en provenance des capteurs du propriétaire, et de la prise de décision de l'entité.
-Il est composé de patterns de comportement, qui sont des couples (cible, comportement) qui sont appliqués à l'entité en fonction de la cible que le cerveau détecte.</p>
-<p>Il existe plusieurs façons de <strong>créer</strong> un <code><a title="boids.Brain" href="#boids.Brain">Brain</a></code> :</p>
-<ul>
-<li><code><a title="boids.Brain" href="#boids.Brain">Brain</a>(owner, environment, behavior_patterns)</code></li>
-<li><code><a title="boids.Brain" href="#boids.Brain">Brain</a>(owner, environment)</code></li>
-</ul>
-<p>Les <strong>propriétés</strong> (accesseurs et mutateurs) sont :</p>
-<ul>
-<li><code><a title="boids.Brain.active_behaviors" href="#boids.Brain.active_behaviors">Brain.active_behaviors</a></code> [lecture] : retourne la liste des comportements actifs</li>
-<li><code><a title="boids.Brain.seen_entities" href="#boids.Brain.seen_entities">Brain.seen_entities</a></code> [lecture] : retourne la liste des entités vues par le cerveau</li>
-<li><code><a title="boids.Brain.behavior_patterns" href="#boids.Brain.behavior_patterns">Brain.behavior_patterns</a></code> [lecture/écriture] : la liste des patterns de comportement</li>
-</ul>
-<p>Les <strong>méthodes</strong> sont :</p>
-<ul>
-<li><code><a title="boids.Brain.process" href="#boids.Brain.process">Brain.process()</a></code> : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants</li>
-<li><code><a title="boids.Brain.behave" href="#boids.Brain.behave">Brain.behave()</a></code> : applique les comportements actifs sur le propriétaire</li>
-<li><code><a title="boids.Brain.draw_line_to_seen_entities" href="#boids.Brain.draw_line_to_seen_entities">Brain.draw_line_to_seen_entities()</a></code> : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire</li>
-</ul>
-<p>Les <strong>attributs</strong> sont :</p>
-<ul>
-<li><code>Brain.__owner</code> : l'entité propriétaire</li>
-<li><code>Brain.__environment</code> : l'environnement dans lequel évolue l'entité</li>
-<li><code>Brain.__behavior_patterns</code> : la liste des patterns de comportement</li>
-<li><code>Brain.__seen_entities</code> : la liste des entités vues par le cerveau</li>
-<li><code>Brain.__active_behaviors</code> : la liste des comportements actifs</li>
-<li><code>Brain.__permanent_patterns</code> : la liste des patterns de comportement permanents</li>
-</ul>
-<p>Exemple d'utilisation :</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; brain = Brain(owner, environment)
-&gt;&gt;&gt; print(brain.behavior_patterns)
-{ &quot;DynamicCircle&quot;: { &quot;Behavior&quot;: Evade, &quot;Target_type&quot; : &quot;single&quot; }, &quot;SentientCircle&quot;: { &quot;Behavior&quot;: Cohesion, &quot;Target_type&quot; : &quot;grouping&quot; }, &quot;Circle&quot;: { &quot;Behavior&quot;: EntityRepulsion, &quot;Target_type&quot; : &quot;single&quot; }, &quot;Unknown&quot;: { &quot;Behavior&quot;: Evade, &quot;Target_type&quot; : &quot;single&quot; }, &quot;No_target&quot;: { &quot;Behavior&quot;: Wander, &quot;Target_type&quot; : &quot;none&quot; } }
-</code></pre></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Brain():
-    &#34;&#34;&#34;Cette classe représente  un cerveau appartenant à un objet propriétaire. 
-    Il est responsable de la collecte d&#39;informations en provenance des capteurs du propriétaire, et de la prise de décision de l&#39;entité.
-    Il est composé de patterns de comportement, qui sont des couples (cible, comportement) qui sont appliqués à l&#39;entité en fonction de la cible que le cerveau détecte.
-    
-    Il existe plusieurs façons de **créer** un `Brain` :
-    
-    - `Brain(owner, environment, behavior_patterns)`
-    - `Brain(owner, environment)`
-
-    Les **propriétés** (accesseurs et mutateurs) sont :
-
-    - `Brain.active_behaviors` [lecture] : retourne la liste des comportements actifs
-    - `Brain.seen_entities` [lecture] : retourne la liste des entités vues par le cerveau
-    - `Brain.behavior_patterns` [lecture/écriture] : la liste des patterns de comportement
-
-    Les **méthodes** sont :
-
-    - `Brain.process()` : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants
-    - `Brain.behave()` : applique les comportements actifs sur le propriétaire
-    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l&#39;entité propriétaire
-
-    Les **attributs** sont :
-
-    - `Brain.__owner` : l&#39;entité propriétaire
-    - `Brain.__environment` : l&#39;environnement dans lequel évolue l&#39;entité
-    - `Brain.__behavior_patterns` : la liste des patterns de comportement
-    - `Brain.__seen_entities` : la liste des entités vues par le cerveau
-    - `Brain.__active_behaviors` : la liste des comportements actifs
-    - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
-
-    Exemple d&#39;utilisation :
-
-    &gt;&gt;&gt; brain = Brain(owner, environment)
-    &gt;&gt;&gt; print(brain.behavior_patterns)
-    { &#34;DynamicCircle&#34;: { &#34;Behavior&#34;: Evade, &#34;Target_type&#34; : &#34;single&#34; }, &#34;SentientCircle&#34;: { &#34;Behavior&#34;: Cohesion, &#34;Target_type&#34; : &#34;grouping&#34; }, &#34;Circle&#34;: { &#34;Behavior&#34;: EntityRepulsion, &#34;Target_type&#34; : &#34;single&#34; }, &#34;Unknown&#34;: { &#34;Behavior&#34;: Evade, &#34;Target_type&#34; : &#34;single&#34; }, &#34;No_target&#34;: { &#34;Behavior&#34;: Wander, &#34;Target_type&#34; : &#34;none&#34; } }
-
-    &#34;&#34;&#34;
     def __init__(self, owner, environment, behavior_patterns=None):
         self.__owner = owner
         self.__environment = environment
@@ -2478,7 +2396,7 @@ def seen_entities(self):
 </dd>
 <dt id="boids.Circle"><code class="flex name class">
 <span>class <span class="ident">Circle</span></span>
-<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=71.0, y=73.0), radius: int = 50)</span>
+<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=751.0, y=177.0), radius: int = 50)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2983,7 +2901,7 @@ def draw(self):
 </dd>
 <dt id="boids.DynamicCircle"><code class="flex name class">
 <span>class <span class="ident">DynamicCircle</span></span>
-<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=737.0, y=22.0), radius=20, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=38.0, y=-45.0), max_speed=100, max_steering_force=50, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None)</span>
+<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=319.0, y=454.0), radius=23, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=-33.0, y=-15.0), max_speed=100, max_steering_force=50, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3701,7 +3619,6 @@ together.</p>
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar()
-        # self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)
         self.__view_window = ViewWindow(size=Vect2D(size.x, size.y), fill_color=fill_color)
         self.__main_panel.grid(row=0, column=1)
         self.__view_window.grid(row=0, column=1, rowspan=4, sticky=&#34;ns&#34;)
@@ -4257,7 +4174,7 @@ def steering_force(self):
 </dd>
 <dt id="boids.PredatorCircle"><code class="flex name class">
 <span>class <span class="ident">PredatorCircle</span></span>
-<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=315.0, y=175.0), radius=35, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=24.0, y=-23.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, fov=1.5707963267948966, range=100, environment=None)</span>
+<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=480.0, y=223.0), radius=42, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=17.0, y=17.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, fov=1.5707963267948966, range=100, environment=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -4295,7 +4212,7 @@ def steering_force(self):
 </dd>
 <dt id="boids.PreyCircle"><code class="flex name class">
 <span>class <span class="ident">PreyCircle</span></span>
-<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=158.0, y=244.0), radius=18, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=46.0, y=-2.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, fov=1.5707963267948966, range=100, environment=None)</span>
+<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=588.0, y=123.0), radius=39, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=-5.0, y=-26.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, fov=1.5707963267948966, range=100, environment=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -4719,7 +4636,7 @@ It is a child class of the SteeringBehavior class.</p></div>
 </dd>
 <dt id="boids.SentientCircle"><code class="flex name class">
 <span>class <span class="ident">SentientCircle</span></span>
-<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=31.0, y=83.0), radius=12, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=-4.0, y=37.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, environment=None, brain=None, eyes=None)</span>
+<span>(</span><span>border_color=&lt;boids.RGBAColor object&gt;, border_width=5, fill_color=&lt;boids.RGBAColor object&gt;, position=vect2d.Vect2D(x=271.0, y=75.0), radius=27, acceleration=vect2d.Vect2D(x=0.0, y=0.0), speed=vect2d.Vect2D(x=-50.0, y=-9.0), max_speed=100, max_steering_force=5, steering_force=vect2d.Vect2D(x=0.0, y=0.0), steering_behaviors=None, environment=None, brain=None, eyes=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -4746,7 +4663,6 @@ It is a child class of the SteeringBehavior class.</p></div>
 
     def draw_circle_steering_force(self, draw):
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill=&#34;darkgoldenrod&#34;, width=5)
-        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill=&#34;darkgoldenrod&#34;, width=5)
         for steering_behavior in self.__brain.active_behaviors:
             if hasattr(steering_behavior, &#34;draw&#34;):
                     steering_behavior.draw(draw)
@@ -4822,7 +4738,6 @@ def eyes(self):
 </summary>
 <pre><code class="python">def draw_circle_steering_force(self, draw):
     draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill=&#34;darkgoldenrod&#34;, width=5)
-    # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill=&#34;darkgoldenrod&#34;, width=5)
     for steering_behavior in self.__brain.active_behaviors:
         if hasattr(steering_behavior, &#34;draw&#34;):
                 steering_behavior.draw(draw)</code></pre>
@@ -4950,12 +4865,47 @@ height</p></div>
 <span>(</span><span>size=vect2d.Vect2D(x=100.0, y=100.0))</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>La classe Simulation correspond à la simulation elle-même.
+Elle contient les sprites, la taille de l'image, la position de la souris, et la boucle de jeu qui bouge les Entities.
+Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.</p>
+<h2 id="args">Args</h2>
+<ul>
+<li>:param size: Vect2D, la taille de la fenêtre</li>
+<li>:param sprites: list, la liste des sprites</li>
+<li>:param mouse_pos: Vect2D, la position de la souris</li>
+<li>:param is_running: bool, True si la simulation est en cours, False sinon</li>
+<li>:param seed: int, le seed pour la génération aléatoire</li>
+<li>:param selected_entity: Entity, l'entité sélectionnée par le click de la souris
+Exemples: Créé une simulation et l'initialise un scénario</li>
+</ul>
+<pre><code class="language-python-repl">&gt;&gt;&gt; sim = Simulation()
+&gt;&gt;&gt; sim.initialize_scenario(key=&quot;Seek, Flee or Wander&quot;)
+&gt;&gt;&gt; print(len(sim.sprites))
+250
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Simulation(Updatable):
+    &#34;&#34;&#34; La classe Simulation correspond à la simulation elle-même. 
+        Elle contient les sprites, la taille de l&#39;image, la position de la souris, et la boucle de jeu qui bouge les Entities.
+        Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
+       
+        Args:
+            - :param size: Vect2D, la taille de la fenêtre
+            - :param sprites: list, la liste des sprites
+            - :param mouse_pos: Vect2D, la position de la souris
+            - :param is_running: bool, True si la simulation est en cours, False sinon
+            - :param seed: int, le seed pour la génération aléatoire
+            - :param selected_entity: Entity, l&#39;entité sélectionnée par le click de la souris
+        
+        Exemples: Créé une simulation et l&#39;initialise un scénario
+        &gt;&gt;&gt; sim = Simulation()
+        &gt;&gt;&gt; sim.initialize_scenario(key=&#34;Seek, Flee or Wander&#34;)
+        &gt;&gt;&gt; print(len(sim.sprites))
+        250
+    &#34;&#34;&#34;
     def __init__(self, size=Vect2D(100,100)):
         self.__size = size
         self.__sprites = []
@@ -5212,66 +5162,81 @@ height</p></div>
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
     def tick(self, time):
+        &#34;&#34;&#34;Fait bouger les Entities, est appelée par la fonction update() de la classe App&#34;&#34;&#34;
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
 
     def reset(self, key:str=&#34;Red chasing Green&#34;):
+        &#34;&#34;&#34;Remet la simulation à zéro&#34;&#34;&#34;
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
 
     def move_mouse(self, event):
+        &#34;&#34;&#34;Met à jour la position de la souris&#34;&#34;&#34;
         self.__mouse_pos.set(event.x, event.y)
         
     def mouse_left(self, event):
+        &#34;&#34;&#34;Gère la sortie de la souris de la fenêtre&#34;&#34;&#34;
         self.__mouse_pos.set(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
+        &#34;&#34;&#34;Gère l&#39;entrée de la souris dans la fenêtre&#34;&#34;&#34;
         self.__mouse_pos.set(event.x, event.y)
         
     def toggle_running(self, event):
+        &#34;&#34;&#34;Met en pause ou en reprend la simulation&#34;&#34;&#34;
         self.__is_running = not self.__is_running
         
     def check_entity_clicked(self, event):
+        &#34;&#34;&#34;Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click&#34;&#34;&#34;
         radius_offset = 20
         for sprite in reversed(self.__sprites):
             if sprite.position.x - (sprite.radius + radius_offset) &lt; event.x &lt; sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) &lt; event.y &lt; sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
 
-    @property  
+    @property
     def selected_entity(self):
+        &#34;&#34;&#34;Retourne l&#39;entité sélectionnée&#34;&#34;&#34;
         return self.__selected_entity
     
     @selected_entity.setter
     def selected_entity(self, value):
+        &#34;&#34;&#34;Définit l&#39;entité sélectionnée&#34;&#34;&#34;
         self.__selected_entity = value
 
     @property
     def sprites(self):
+        &#34;&#34;&#34;Retourne la liste des sprites&#34;&#34;&#34;
         return self.__sprites
     
     @property
     def mouse_pos(self):
+        &#34;&#34;&#34;Retourne la position de la souris&#34;&#34;&#34;
         return self.__mouse_pos
     
     @property
     def size(self):
+        &#34;&#34;&#34;Retourne la taille de la fenêtre&#34;&#34;&#34;
         return self.__size
 
     @property
     def width(self):
+        &#34;&#34;&#34;Retourne la largeur de la fenêtre&#34;&#34;&#34;
         return self.__size.x
 
     @property
     def height(self):
+        &#34;&#34;&#34;Retourne la hauteur de la fenêtre&#34;&#34;&#34;
         return self.__size.y
     
     @property
     def is_running(self):
+        &#34;&#34;&#34;Retourne True si la simulation est en cours, False sinon&#34;&#34;&#34;
         return self.__is_running</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -5282,85 +5247,92 @@ height</p></div>
 <dl>
 <dt id="boids.Simulation.height"><code class="name">var <span class="ident">height</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne la hauteur de la fenêtre</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def height(self):
+    &#34;&#34;&#34;Retourne la hauteur de la fenêtre&#34;&#34;&#34;
     return self.__size.y</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.is_running"><code class="name">var <span class="ident">is_running</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne True si la simulation est en cours, False sinon</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def is_running(self):
+    &#34;&#34;&#34;Retourne True si la simulation est en cours, False sinon&#34;&#34;&#34;
     return self.__is_running</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.mouse_pos"><code class="name">var <span class="ident">mouse_pos</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne la position de la souris</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def mouse_pos(self):
+    &#34;&#34;&#34;Retourne la position de la souris&#34;&#34;&#34;
     return self.__mouse_pos</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.selected_entity"><code class="name">var <span class="ident">selected_entity</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne l'entité sélectionnée</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@property  
+<pre><code class="python">@property
 def selected_entity(self):
+    &#34;&#34;&#34;Retourne l&#39;entité sélectionnée&#34;&#34;&#34;
     return self.__selected_entity</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.size"><code class="name">var <span class="ident">size</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne la taille de la fenêtre</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def size(self):
+    &#34;&#34;&#34;Retourne la taille de la fenêtre&#34;&#34;&#34;
     return self.__size</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.sprites"><code class="name">var <span class="ident">sprites</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne la liste des sprites</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def sprites(self):
+    &#34;&#34;&#34;Retourne la liste des sprites&#34;&#34;&#34;
     return self.__sprites</code></pre>
 </details>
 </dd>
 <dt id="boids.Simulation.width"><code class="name">var <span class="ident">width</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Retourne la largeur de la fenêtre</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def width(self):
+    &#34;&#34;&#34;Retourne la largeur de la fenêtre&#34;&#34;&#34;
     return self.__size.x</code></pre>
 </details>
 </dd>
@@ -5371,12 +5343,13 @@ def width(self):
 <span>def <span class="ident">check_entity_clicked</span></span>(<span>self, event)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def check_entity_clicked(self, event):
+    &#34;&#34;&#34;Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click&#34;&#34;&#34;
     radius_offset = 20
     for sprite in reversed(self.__sprites):
         if sprite.position.x - (sprite.radius + radius_offset) &lt; event.x &lt; sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) &lt; event.y &lt; sprite.position.y + (sprite.radius + radius_offset):
@@ -5642,12 +5615,13 @@ def width(self):
 <span>def <span class="ident">mouse_entered</span></span>(<span>self, event)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Gère l'entrée de la souris dans la fenêtre</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def mouse_entered(self, event):
+    &#34;&#34;&#34;Gère l&#39;entrée de la souris dans la fenêtre&#34;&#34;&#34;
     self.__mouse_pos.set(event.x, event.y)</code></pre>
 </details>
 </dd>
@@ -5655,12 +5629,13 @@ def width(self):
 <span>def <span class="ident">mouse_left</span></span>(<span>self, event)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Gère la sortie de la souris de la fenêtre</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def mouse_left(self, event):
+    &#34;&#34;&#34;Gère la sortie de la souris de la fenêtre&#34;&#34;&#34;
     self.__mouse_pos.set(-1, -1)
     
     for sprite in self.__sprites:
@@ -5671,12 +5646,13 @@ def width(self):
 <span>def <span class="ident">move_mouse</span></span>(<span>self, event)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Met à jour la position de la souris</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def move_mouse(self, event):
+    &#34;&#34;&#34;Met à jour la position de la souris&#34;&#34;&#34;
     self.__mouse_pos.set(event.x, event.y)</code></pre>
 </details>
 </dd>
@@ -5684,12 +5660,13 @@ def width(self):
 <span>def <span class="ident">reset</span></span>(<span>self, key: str = 'Red chasing Green')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Remet la simulation à zéro</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def reset(self, key:str=&#34;Red chasing Green&#34;):
+    &#34;&#34;&#34;Remet la simulation à zéro&#34;&#34;&#34;
     self.__is_running = True
     self.__sprites = []
     self.initialize_scenario(key)</code></pre>
@@ -5699,12 +5676,13 @@ def width(self):
 <span>def <span class="ident">tick</span></span>(<span>self, time)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Fait bouger les Entities, est appelée par la fonction update() de la classe App</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def tick(self, time):
+    &#34;&#34;&#34;Fait bouger les Entities, est appelée par la fonction update() de la classe App&#34;&#34;&#34;
     if self.__sprites:
         for sprite in self.__sprites:
             sprite.tick(time)</code></pre>
@@ -5714,12 +5692,13 @@ def width(self):
 <span>def <span class="ident">toggle_running</span></span>(<span>self, event)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Met en pause ou en reprend la simulation</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def toggle_running(self, event):
+    &#34;&#34;&#34;Met en pause ou en reprend la simulation&#34;&#34;&#34;
     self.__is_running = not self.__is_running</code></pre>
 </details>
 </dd>
