@@ -724,6 +724,20 @@ class Entity(Drawable, Updatable):
         Drawable.__init__(self, border_color, border_width, fill_color, position, size)
         Updatable.__init__(self)
         
+        """L'entity est un objet qui peut être dessiné et qui peut être mis à jour
+        
+        Args:
+            border_color (RGBAColor): Couleur de la bordure
+            border_width (int): Epaisseur de la bordure
+            fill_color (RGBAColor): Couleur de remplissage
+            position (Vect2D): Position de l'entity
+            size (Vect2D): Taille de l'entity
+            
+            >>> entity = Entity(RGBAColor(255, 0, 0), 1, RGBAColor(0, 0, 255), Vect2D(0, 0), Vect2D(100, 100))
+            >>> print(entity)        
+            
+        """
+    
         self.__available_names = ["William", "Logan", "Liam", "Noah", "Jacob", "Thomas", 
                                 "Raphael", "Nathan", "Leo", "Alexis", "Emile", "Edouard",
                                 "Felix", "Samuel", "Olivier", "Gabriel", "Charles", "Antoine",
@@ -768,7 +782,8 @@ class Circle(Entity):
     def __init__(self, border_color = RGBAColor(randomize=True), border_width = 5, fill_color = RGBAColor(0,0,0,255),  position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius:int=50):
         Entity.__init__(self, border_color=border_color, border_width=border_width, fill_color=fill_color, position=position, size=Vect2D(radius*2, radius*2))
         self.__radius = radius
-
+        
+    
     @property
     def radius(self):
         return self.__radius
@@ -815,17 +830,17 @@ class DynamicCircle(Circle, Movable, Piloted):
         """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
         
         Args:
-            border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
-            border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
-            fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
-            position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
-            radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
-            acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
-            speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
-            max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
-            max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
-            steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
-            steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
+            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
+            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
+            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
+            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
+            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
+            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
+            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
+            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
+            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
+            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
+            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
             
         Exemple:
             >>> dynamic_circle = DynamicCircle()
