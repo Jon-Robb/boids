@@ -232,7 +232,7 @@ class Wander(Seek):
     def draw(self, draw):
         for target_entity in self.target_entities:
             draw.ellipse([self.__circle_center.x - self.radius, self.__circle_center.y - self.radius, self.__circle_center.x + self.radius, self.__circle_center.y  + self.radius], outline="blue")
-            draw.ellipse([target_entity.x - 5, target_entity.y - 5, target_entity.x + 5, target_entity.y + 5], fill="cyan")
+            draw.ellipse([target_entity.x - 5, target_entity.y - 5, target_entity.x + 5, target_entity.y + 5], fill="purple")
         
     @property
     def circle_distance(self):
@@ -1262,7 +1262,7 @@ class Simulation(Updatable):
 
 
             case 'Follow Biggest Boid Seen':
-                nb_balls = 50
+                nb_balls = 5
 
                 behavior_patterns =  {  "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
                                         "SentientCircle": { "Behavior": FollowBiggestBoidSeen, "Target_type" : "grouping" },
