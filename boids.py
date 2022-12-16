@@ -851,7 +851,6 @@ class SentientCircle(DynamicCircle):
 
     def draw_circle_steering_force(self, draw):
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
-        # draw.line([self.position.x, self.position.y, abs(self.steering_force.x * 10 + self.position.x), abs(self.steering_force.y * 10 + self.position.y)], fill="darkgoldenrod", width=5)
         for steering_behavior in self.__brain.active_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
@@ -1238,7 +1237,6 @@ class GUI(ttk.Frame, Drawable):
         ttk.Frame.__init__(self, root=None, text=None)
         Drawable.__init__(self, border_color,  border_width, fill_color, position, size)
         self.__main_panel = ControlBar()
-        # self.__view_window = ViewWindow(size=Vect2D(size.x * 0.80, size.y * 0.99), fill_color=fill_color)
         self.__view_window = ViewWindow(size=Vect2D(size.x, size.y), fill_color=fill_color)
         self.__main_panel.grid(row=0, column=1)
         self.__view_window.grid(row=0, column=1, rowspan=4, sticky="ns")
