@@ -523,7 +523,12 @@ class Movable():
 
 class Piloted():
     '''
-    Piloted represent the ability of a dynamic circle to be influenced by a steering behavior. it contains the steer function that can be override.
+    Piloted représente la capacité à un cercle dynamique d'être influencé par un Steering Behaviour.
+
+    Args:
+    self.__max_steering_force (int): la force maximal de direction .
+    self.steering_force (Vect2D): la force de direction.
+    self.__steering_behaviors (list[SteeringBehavior]): la liste des Steering Behaviors.
     
     '''
     def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
