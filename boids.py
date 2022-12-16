@@ -906,6 +906,54 @@ class PreyCircle(SentientCircle):
 
 
 class Simulation(Updatable):
+    """ La classe Simulation correspond à la simulation elle-même. 
+        Elle contient les sprites, la taille de l'image, la position de la souris, et la boucle de jeu qui bouge les Entities.
+        Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
+       
+        :param size: Vect2D, la taille de la fenêtre
+        :param sprites: list, la liste des sprites
+        :param mouse_pos: Vect2D, la position de la souris
+        :param is_running: bool, True si la simulation est en cours, False sinon
+        :param seed: int, le seed pour la génération aléatoire
+        :param selected_entity: Entity, l'entité sélectionnée par le click de la souris
+        
+        -tick()
+            Fait bouger les Entities, est appelée par la fonction update() de la classe App
+        -reset()
+            Remet la simulation à zéro
+        -mouse_mouse()
+            Met à jour la position de la souris
+        -mouse_left(event)
+            Gère la sortie de la souris de la fenêtre
+        -mouse_entred(event)
+            Gère l'entrée de la souris dans la fenêtre
+        -toggle_running(event)
+            Met en pause ou en reprend la simulation
+        -check_entity_clicked(event)
+            Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click
+        -@property selected_entity()
+            Retourne l'entité sélectionnée
+        -@setter selected_entity()
+            Définit l'entité sélectionnée
+        -@property sprites()
+            Retourne la liste des sprites
+        -@property mouse_pos()
+            Retourne la position de la souris
+        -@property size()
+            Retourne la taille de la fenêtre
+        -@property width()
+            Retourne la largeur de la fenêtre
+        -@property height()
+            Retourne la hauteur de la fenêtre
+        -@property is_running()
+            Retourne True si la simulation est en cours, False sinon
+        
+        :Example: Créé une simulation et l'initialise un scénario
+        >>> sim = Simulation()
+        >>> sim.initialize_scenario(key="Seek, Flee or Wander")
+        >>> print(len(sim.sprites))
+        250
+    """
     def __init__(self, size=Vect2D(100,100)):
         self.__size = size
         self.__sprites = []
