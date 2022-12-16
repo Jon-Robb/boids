@@ -976,45 +976,15 @@ class Simulation(Updatable):
         Elle contient les sprites, la taille de l'image, la position de la souris, et la boucle de jeu qui bouge les Entities.
         Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
        
-        :param size: Vect2D, la taille de la fenêtre
-        :param sprites: list, la liste des sprites
-        :param mouse_pos: Vect2D, la position de la souris
-        :param is_running: bool, True si la simulation est en cours, False sinon
-        :param seed: int, le seed pour la génération aléatoire
-        :param selected_entity: Entity, l'entité sélectionnée par le click de la souris
+        Args:
+            - :param size: Vect2D, la taille de la fenêtre
+            - :param sprites: list, la liste des sprites
+            - :param mouse_pos: Vect2D, la position de la souris
+            - :param is_running: bool, True si la simulation est en cours, False sinon
+            - :param seed: int, le seed pour la génération aléatoire
+            - :param selected_entity: Entity, l'entité sélectionnée par le click de la souris
         
-        -tick()
-            Fait bouger les Entities, est appelée par la fonction update() de la classe App
-        -reset()
-            Remet la simulation à zéro
-        -mouse_mouse()
-            Met à jour la position de la souris
-        -mouse_left(event)
-            Gère la sortie de la souris de la fenêtre
-        -mouse_entred(event)
-            Gère l'entrée de la souris dans la fenêtre
-        -toggle_running(event)
-            Met en pause ou en reprend la simulation
-        -check_entity_clicked(event)
-            Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click
-        -@property selected_entity()
-            Retourne l'entité sélectionnée
-        -@setter selected_entity()
-            Définit l'entité sélectionnée
-        -@property sprites()
-            Retourne la liste des sprites
-        -@property mouse_pos()
-            Retourne la position de la souris
-        -@property size()
-            Retourne la taille de la fenêtre
-        -@property width()
-            Retourne la largeur de la fenêtre
-        -@property height()
-            Retourne la hauteur de la fenêtre
-        -@property is_running()
-            Retourne True si la simulation est en cours, False sinon
-        
-        :Example: Créé une simulation et l'initialise un scénario
+        Exemples: Créé une simulation et l'initialise un scénario
         >>> sim = Simulation()
         >>> sim.initialize_scenario(key="Seek, Flee or Wander")
         >>> print(len(sim.sprites))
@@ -1276,66 +1246,81 @@ class Simulation(Updatable):
                         self.__sprites[i].steering_behaviors.append(Evade([self.__sprites[i+1]]))
 
     def tick(self, time):
+        """Fait bouger les Entities, est appelée par la fonction update() de la classe App"""
         if self.__sprites:
             for sprite in self.__sprites:
                 sprite.tick(time)
 
     def reset(self, key:str="Red chasing Green"):
+        """Remet la simulation à zéro"""
         self.__is_running = True
         self.__sprites = []
         self.initialize_scenario(key)
 
     def move_mouse(self, event):
+        """Met à jour la position de la souris"""
         self.__mouse_pos.set(event.x, event.y)
         
     def mouse_left(self, event):
+        """Gère la sortie de la souris de la fenêtre"""
         self.__mouse_pos.set(-1, -1)
         
         for sprite in self.__sprites:
             sprite.steering_force = Vect2D(0,0)
 
     def mouse_entered(self, event):
+        """Gère l'entrée de la souris dans la fenêtre"""
         self.__mouse_pos.set(event.x, event.y)
         
     def toggle_running(self, event):
+        """Met en pause ou en reprend la simulation"""
         self.__is_running = not self.__is_running
         
     def check_entity_clicked(self, event):
+        """Vérifie si une entité a été cliquée avec un offset de 20 pixels pour le miss click"""
         radius_offset = 20
         for sprite in reversed(self.__sprites):
             if sprite.position.x - (sprite.radius + radius_offset) < event.x < sprite.position.x + (sprite.radius + radius_offset) and sprite.position.y - (sprite.radius + radius_offset) < event.y < sprite.position.y + (sprite.radius + radius_offset):
                 return sprite
 
-    @property  
+    @property
     def selected_entity(self):
+        """Retourne l'entité sélectionnée"""
         return self.__selected_entity
     
     @selected_entity.setter
     def selected_entity(self, value):
+        """Définit l'entité sélectionnée"""
         self.__selected_entity = value
 
     @property
     def sprites(self):
+        """Retourne la liste des sprites"""
         return self.__sprites
     
     @property
     def mouse_pos(self):
+        """Retourne la position de la souris"""
         return self.__mouse_pos
     
     @property
     def size(self):
+        """Retourne la taille de la fenêtre"""
         return self.__size
 
     @property
     def width(self):
+        """Retourne la largeur de la fenêtre"""
         return self.__size.x
 
     @property
     def height(self):
+        """Retourne la hauteur de la fenêtre"""
         return self.__size.y
     
     @property
     def is_running(self):
+        """Retourne True si la simulation est en cours, False sinon"""
         return self.__is_running
 
 
