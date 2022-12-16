@@ -634,7 +634,7 @@ class Brain():
 
     - `Brain.process()` : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants
     - `Brain.behave()` : applique les comportements actifs sur le propriétaire
-    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire
+    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu
 
     Les **attributs** sont :
 
@@ -695,9 +695,9 @@ class Brain():
         La liste des comportements actifs
         """
 
-    def process(self):
+    def process(self) -> None:
         """
-
+        Traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants.
         """
         self.__seen_entities = []
         self.__active_behaviors = []
@@ -726,8 +726,9 @@ class Brain():
             self.__active_behaviors.append(behavior())
         self.behave()
 
-    def draw_line_to_seen_entities(self, draw) -> None:
+    def draw_line_to_seen_entities(self, draw:ImageDraw) -> None:
         """
+        Dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu.
         """
         halo_radius = self.__owner.radius * 1.25
         for seen_entity in self.__seen_entities:
@@ -736,6 +737,7 @@ class Brain():
             
     def behave(self) -> None:
         """
+        Applique les comportements actifs sur l'entité propriétaire.
         """
         for behavior in self.__active_behaviors:
                 self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
@@ -745,24 +747,28 @@ class Brain():
     @property
     def active_behaviors(self):
         """
+        Renvoie la liste des comportements actifs.
         """
         return self.__active_behaviors
     
     @property
     def seen_entities(self):
         """
+        Retourne la liste des entités vues par le cerveau.
         """
         return self.__seen_entities
 
     @property
     def behavior_patterns(self):
         """
+        Retourne la liste des patterns de comportement.
         """
         return self.__behavior_patterns
 
     @behavior_patterns.setter
     def behavior_patterns(self, value):
         """
+        Définit la liste des patterns de comportement.
         """
         self.__behavior_patterns = value
 
@@ -937,6 +943,44 @@ class Circle(Entity):
 
 class DynamicCircle(Circle, Movable, Piloted):
     
+    """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
+        
+        Args:
+            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
+            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
+            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
+            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
+            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
+            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
+            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
+            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
+            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
+            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
+            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
+            
+        Exemple:
+            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), max_speed=100, max_steering_force=50)
+            >>> print(isinstance(dynamic_circle, DynamicCircle))
+            True
+            >>> print(dynamic_circle.position.x, dynamic_circle.position.y)
+            100.0 100.0
+            >>> print(dynamic_circle.speed.x, dynamic_circle.speed.y)
+            10.0 10.0
+            >>> print(dynamic_circle.max_speed)
+            100     
+            >>> print(dynamic_circle.max_steering_force)
+            50
+            >>> print(dynamic_circle.radius)
+            50
+            >>> print(isinstance(dynamic_circle, DynamicCircle))
+            True
+            >>> print(isinstance(dynamic_circle, Circle))
+            True
+            >>> print(isinstance(dynamic_circle, Movable))
+            True  
+        """
+            
+    
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     border_width=5,
@@ -954,41 +998,7 @@ class DynamicCircle(Circle, Movable, Piloted):
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, steering_force, steering_behaviors)
         
-        """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
         
-        Args:
-            - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
-            - border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
-            - fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
-            - position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
-            - radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
-            - acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
-            - speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
-            - max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
-            - max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
-            - steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
-            - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
-            
-        Exemple:
-            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), steering_behaviors=[SeekBehavior(Vect2D(500,500))]
-            >>> print(dynamic_circle.position)
-            (100, 100)
-            >>> print(dynamic_circle.speed)
-            (10)
-            >>> print(dynamic_circle.max_speed)
-            100     
-            >>> print(dynamic_circle.max_steering_force)
-            50
-            >>> print(dynamic_circle.radius)
-            50
-            >>> print(type(dynamic_circle))
-            Entity
-            >>> print(type(dynamic_circle.position))
-            Vect2D
-            >>> print(type(dynamic_circle.speed))
-            Vect2D  
-        """
-            
     def draw(self, draw:ImageDraw):
         """Methode generique de dessin d'un cercle dynamique
 
