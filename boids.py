@@ -794,6 +794,7 @@ class Circle(Entity):
 
 
 class DynamicCircle(Circle, Movable, Piloted):
+    
     def __init__(   self,
                     border_color=RGBAColor(randomize=True),
                     border_width=5,
@@ -807,18 +808,41 @@ class DynamicCircle(Circle, Movable, Piloted):
                     steering_force=Vect2D(0,0),
                     steering_behaviors=None,
                 ):
-    
         Circle.__init__(self, border_color, border_width, fill_color, position, radius)
         Movable.__init__(self, acceleration, max_speed, speed)
         Piloted.__init__(self, max_steering_force, steering_force, steering_behaviors)
         
-    def draw(self, draw):
+        """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
+        
+        Args:
+            border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
+            border_width (int, optional): Epaisseur de la bordure. Defaults to 5.
+            fill_color (RGBAColor, optional): Couleur de remplissage. Defaults to RGBAColor(randomize=True).
+            position (Vect2D, optional): Position du cercle. Defaults to Vect2D(random.randrange(0,1000),random.randrange(0,500)).
+            radius (int, optional): Rayon du cercle. Defaults to random.randint(10, 50).
+            acceleration (Vect2D, optional): Accélération du cercle. Defaults to Vect2D(0,0).
+            speed (Vect2D, optional): Vitesse du cercle. Defaults to Vect2D(random.randrange(-50,50), random.randrange(-50,50)).
+            max_speed (int, optional): Vitesse maximale du cercle. Defaults to 100.
+            max_steering_force (int, optional): Force de déplacement maximale. Defaults to 50.
+            steering_force (Vect2D, optional): Force de déplacement. Defaults to Vect2D(0,0).
+            steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
+            
+        Exemple:
+            >>> dynamic_circle = DynamicCircle()
+            >>> dynamic_circle.draw()
+            >>> dynamic_circle.tick(1)
+            >>> dynamic_circle.draw_circle_speed()
+            >>> dynamic_circle.draw_circle_steering_force()
+            >>> dynamic_circle.move(1)
+        """
+            
+    def draw(self, draw:ImageDraw):
         Circle.draw(self, draw)
 
-    def draw_circle_speed(self, draw):
+    def draw_circle_speed(self, draw:ImageDraw):
         draw.line([self.position.x, self.position.y, self.position.x + self.speed.x, self.position.y + self.speed.y], fill="red", width=5)
         
-    def draw_circle_steering_force(self, draw):
+    def draw_circle_steering_force(self, draw:ImageDraw):
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
@@ -836,8 +860,7 @@ class SentientCircle(DynamicCircle):
     def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, steering_force=Vect2D(0,0), steering_behaviors=None, environment=None, brain=None, eyes=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, steering_force, steering_behaviors)
 
-        self.__brain = brain if brain else Brain(self, environment)
-        
+        self.__brain = brain if brain else Brain(self, environment)  
         self.__eyes = eyes if eyes else [Eye(self)]
 
     def tick(self, time):
