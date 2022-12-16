@@ -696,7 +696,7 @@ class Brain():
         La liste des comportements actifs
         """
 
-    def process(self):
+    def process(self) -> None:
         """
         Traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants.
         """
@@ -727,7 +727,7 @@ class Brain():
             self.__active_behaviors.append(behavior())
         self.behave()
 
-    def draw_line_to_seen_entities(self, draw) -> None:
+    def draw_line_to_seen_entities(self, draw:ImageDraw) -> None:
         """
         Dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu.
         """
