@@ -635,7 +635,7 @@ class Brain():
 
     - `Brain.process()` : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants
     - `Brain.behave()` : applique les comportements actifs sur le propriétaire
-    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire
+    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu
 
     Les **attributs** sont :
 
@@ -698,7 +698,7 @@ class Brain():
 
     def process(self):
         """
-
+        Traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants.
         """
         self.__seen_entities = []
         self.__active_behaviors = []
@@ -729,6 +729,7 @@ class Brain():
 
     def draw_line_to_seen_entities(self, draw) -> None:
         """
+        Dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire avec un halo bleu.
         """
         halo_radius = self.__owner.radius * 1.25
         for seen_entity in self.__seen_entities:
@@ -737,6 +738,7 @@ class Brain():
             
     def behave(self) -> None:
         """
+        Applique les comportements actifs sur l'entité propriétaire.
         """
         for behavior in self.__active_behaviors:
                 self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
@@ -746,24 +748,28 @@ class Brain():
     @property
     def active_behaviors(self):
         """
+        Renvoie la liste des comportements actifs.
         """
         return self.__active_behaviors
     
     @property
     def seen_entities(self):
         """
+        Retourne la liste des entités vues par le cerveau.
         """
         return self.__seen_entities
 
     @property
     def behavior_patterns(self):
         """
+        Retourne la liste des patterns de comportement.
         """
         return self.__behavior_patterns
 
     @behavior_patterns.setter
     def behavior_patterns(self, value):
         """
+        Définit la liste des patterns de comportement.
         """
         self.__behavior_patterns = value
 
