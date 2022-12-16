@@ -44,37 +44,43 @@ class RGBAColor():
         
     @property
     def r(self):
+        """r is a property that returns the red value of the color object."""
         return self.__r
         
     @property
     def g(self):
+        """g is a property that returns the green value of the color object."""
         return self.__g
         
     @property
     def b(self):
+        """b is a property that returns the blue value of the color object."""
         return self.__b
         
     @property
     def a(self):
+        """a is a property that returns the alpha value of the color object."""
         return self.__a
     
     @property
     def rgba(self):
+        """rgba is a property that returns the rgba values of the color object."""
         return (self.__r, self.__g, self.__b, self.__a)
     
     @rgba.setter
     def rgba(self, rgba):
+        """rgba is a property that sets the rgba values of the color object."""
         self.r = rgba[0]
         self.g = rgba[1]
         self.b = rgba[2]
         self.a = rgba[3]
         
     def randomize_color(self):
+        """randomize_color() returns None and randomizes the color values of the object."""
         self.__r = random.randint(0, 255)
         self.__g = random.randint(0, 255)
         self.__b = random.randint(0, 255)
         self.__a = random.randint(0, 255)
-    """randomize_color() returns None and randomizes the color values of the object."""
 
 
 #      _______.___________. _______  _______ .______       __  .__   __.   _______    .______    _______  __    __       ___   ____    ____  __    ______   .______          _______.
@@ -100,28 +106,35 @@ class SteeringBehavior():
     
     @property
     def attraction_repulsion_force(self):
+        """attraction_repulsion_force is a property that returns the attraction repulsion force of the steering behavior object."""
         return self.__attraction_repulsion_force
     
     @property
     def resulting_direction(self):
+        """resulting_direction is a property that returns the resulting direction of the steering behavior object."""
         return self.__resulting_direction
     
     @resulting_direction.setter
     def resulting_direction(self, resulting_direction):
+        """resulting_direction is a property that sets the resulting direction of the steering behavior object."""
         self.__resulting_direction = resulting_direction
 
     @property
     def target_entities(self):
+        """target_entities is a property that returns the target entities of the steering behavior object."""
         return self.__target_entities
     
     @target_entities.setter
     def target_entities(self, target_entities):
+        """target_entities is a property that sets the target entities of the steering behavior object."""
         self.__target_entities = target_entities
         
     def add_target_entity(self, target_entity):
+        """add_target_entity() returns None and adds a target entity to the steering behavior object."""
         self.__target_entities.append(target_entity)
         
     def remove_target_entity(self, target_entity):
+        """remove_target_entity() returns None and removes a target entity from the steering behavior object."""
         self.__target_entities.remove(target_entity)
 
 
@@ -958,12 +971,23 @@ class DynamicCircle(Circle, Movable, Piloted):
             - steering_behaviors (list, optional): Liste des forces de déplacement. Defaults to None.
             
         Exemple:
-            >>> dynamic_circle = DynamicCircle()
-            >>> dynamic_circle.draw()
-            >>> dynamic_circle.tick(1)
-            >>> dynamic_circle.draw_circle_speed()
-            >>> dynamic_circle.draw_circle_steering_force()
-            >>> dynamic_circle.move(1)
+            >>> dynamic_circle = DynamicCircle(position=Vect2D(100,100), radius=50, speed=Vect2D(10,10), steering_behaviors=[SeekBehavior(Vect2D(500,500))]
+            >>> print(dynamic_circle.position)
+            (100, 100)
+            >>> print(dynamic_circle.speed)
+            (10)
+            >>> print(dynamic_circle.max_speed)
+            100     
+            >>> print(dynamic_circle.max_steering_force)
+            50
+            >>> print(dynamic_circle.radius)
+            50
+            >>> print(type(dynamic_circle))
+            Entity
+            >>> print(type(dynamic_circle.position))
+            Vect2D
+            >>> print(type(dynamic_circle.speed))
+            Vect2D  
         """
             
     def draw(self, draw:ImageDraw):
@@ -1103,7 +1127,7 @@ class Simulation(Updatable):
         >>> sim = Simulation()
         >>> sim.initialize_scenario(key="Seek, Flee or Wander")
         >>> print(len(sim.sprites))
-        250
+        256
     """
     def __init__(self, size=Vect2D(100,100)):
         self.__size = size
@@ -1547,7 +1571,7 @@ class InfoPanel(ttk.LabelFrame):
         return self.__info_string
 
     def update(self):
-        if self.__info_entity is not None:
+        if self.__info_entity is not None and not isinstance(self.__info_entity, Circle):
             self.__info_string = "Name: " + self.__info_entity.name + "\n"
             self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
             self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
@@ -1931,5 +1955,5 @@ def __main_doctest():
     doctest.testmod()#verbose=True)
 
 if __name__ == '__main__':
-    __main_doctest()
+    # __main_doctest()
     main()
