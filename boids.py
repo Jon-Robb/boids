@@ -145,6 +145,7 @@ class Seek(SteeringBehavior):
                     sum_of_forces += (desired_speed - origin_entity.speed) * self.attraction_repulsion_force
         return sum_of_forces
      
+
 class FollowBiggestBoidSeen(SteeringBehavior):
     """
     This class is used to create a follow biggest boid steering behavior object.
@@ -179,6 +180,7 @@ class FollowBiggestBoidSeen(SteeringBehavior):
             else:
                 origin_entity.max_speed = origin_entity.original_max_speed
         return sum_of_forces
+
 
 class Wander(Seek):
     def __init__(self, radius:float=50, circle_distance:float=100, is_in:bool=True, attraction_repulsion_force:int=1):
@@ -566,9 +568,60 @@ class Updatable():
 # |  `----.|  `--'  | |  |  |  | |  |      |  `--'  | |  |\   | |  |____ |  |\   |     |  |    .----)   |   
 #  \______| \______/  |__|  |__| | _|       \______/  |__| \__| |_______||__| \__|     |__|    |_______/    
 class Brain():
+    """
+    Cette classe représente  un cerveau appartenant à un objet propriétaire. 
+    Il est responsable de la collecte d'informations en provenance des capteurs du propriétaire, et de la prise de décision de l'entité.
+    Il est composé de patterns de comportement, qui sont des couples (cible, comportement) qui sont appliqués à l'entité en fonction de la cible que le cerveau détecte.
+    
+    Il existe plusieurs façons de **créer** un `Brain` :
+    
+    - `Brain(owner, environment, behavior_patterns)`
+    - `Brain(owner, environment)`
+
+    Les **propriétés** (accesseurs et mutateurs) sont :
+
+    - `Brain.active_behaviors` [lecture] : retourne la liste des comportements actifs
+    - `Brain.seen_entities` [lecture] : retourne la liste des entités vues par le cerveau
+    - `Brain.behavior_patterns` [lecture/écriture] : la liste des patterns de comportement
+
+    Les **méthodes** sont :
+
+    - `Brain.process()` : traite les informations collectées par les capteurs du propriétaire, et applique les patterns de comportement correspondants
+    - `Brain.behave()` : applique les comportements actifs sur le propriétaire
+    - `Brain.draw_line_to_seen_entities()` : dessine une ligne entre le propriétaire et les entités vues par le cerveau, et surligne l'entité propriétaire
+
+    Les **attributs** sont :
+
+    - `Brain.__owner` : l'entité propriétaire
+    - `Brain.__environment` : l'environnement dans lequel évolue l'entité
+    - `Brain.__behavior_patterns` : la liste des patterns de comportement
+    - `Brain.__seen_entities` : la liste des entités vues par le cerveau
+    - `Brain.__active_behaviors` : la liste des comportements actifs
+    - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
+    """
     def __init__(self, owner, environment, behavior_patterns=None):
+        """
+        Création d'un objet `Brain` utilisant les patterns de comportement passés en paramètre.
+        Si aucun pattern n'est passé en paramètre, les patterns par défaut sont utilisés.
+
+        Args:
+            owner (Entity): l'entité propriétaire
+            environment (Environment): l'environnement dans lequel évolue l'entité
+            behavior_patterns (dict, optional): la liste des patterns de comportement. Defaults to None.
+
+        Exemple d'utilisation :
+            >>> brain = Brain(owner, environment)
+            >>> print(brain.behavior_patterns)
+            { "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" }, "Circle": { "Behavior": EntityRepulsion, "Target_type" : "single" }, "Unknown": { "Behavior": Evade, "Target_type" : "single" }, "No_target": { "Behavior": Wander, "Target_type" : "none" } }
+        """
         self.__owner = owner
+        """
+        L'entité propriétaire
+        """
         self.__environment = environment
+        """
+        L'environnement dans lequel évolue l'entité
+        """
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
                                             "SentientCircle": { "Behavior": Cohesion, "Target_type" : "grouping" },
@@ -576,14 +629,29 @@ class Brain():
                                             "Unknown": { "Behavior": Evade, "Target_type" : "single" },
                                             "No_target": { "Behavior": Wander, "Target_type" : "none" }
                                         }
+            """
+            La liste des patterns de comportement
+            Si aucun pattern n'est passé en paramètre, les patterns par défaut sont utilisés.
+            """
         else: self.__behavior_patterns = behavior_patterns
         self.__permanent_patterns = [BorderRepulsion(sim_dim=environment.size)]
-
+        """
+        La liste des patterns de comportement permanents
+        """
 
         self.__seen_entities = []
+        """
+        La liste des entités vues par le cerveau
+        
+        """
         self.__active_behaviors = self.__permanent_patterns
+        """
+        La liste des comportements actifs
+        """
 
     def process(self):
+        """
+        """
         self.__seen_entities = []
         self.__active_behaviors = []
         self.__active_behaviors.extend(self.__permanent_patterns)
@@ -612,12 +680,16 @@ class Brain():
         self.behave()
 
     def draw_line_to_seen_entities(self, draw) -> None:
+        """
+        """
         halo_radius = self.__owner.radius * 1.25
         for seen_entity in self.__seen_entities:
             draw.ellipse([self.__owner.position.x - halo_radius, self.__owner.position.y -  halo_radius, self.__owner.position.x +  halo_radius, self.__owner.position.y +  halo_radius], fill="cyan")
             draw.line([self.__owner.position.x, self.__owner.position.y, seen_entity.position.x, seen_entity.position.y], fill="cyan", width=5)
             
     def behave(self) -> None:
+        """
+        """
         for behavior in self.__active_behaviors:
                 self.__owner.steering_force.set(self.__owner.steering_force.x + behavior.behave(origin_entity=self.__owner).x, self.__owner.steering_force.y + behavior.behave(origin_entity=self.__owner).y)
 
@@ -625,18 +697,26 @@ class Brain():
 
     @property
     def active_behaviors(self):
+        """
+        """
         return self.__active_behaviors
     
     @property
     def seen_entities(self):
+        """
+        """
         return self.__seen_entities
 
     @property
     def behavior_patterns(self):
+        """
+        """
         return self.__behavior_patterns
 
     @behavior_patterns.setter
     def behavior_patterns(self, value):
+        """
+        """
         self.__behavior_patterns = value
 
 
@@ -1251,6 +1331,7 @@ class GUI(ttk.Frame, Drawable):
     def view_window(self):
         return self.__view_window
 
+
 class ControlBar(ttk.Frame):
     def __init__(self):
         ttk.Frame.__init__(self)
@@ -1278,6 +1359,7 @@ class ControlBar(ttk.Frame):
     @property
     def info_panel(self):
         return self.__Info_panel
+
 
 class StartStopPanel(ttk.LabelFrame):
     def __init__(self, text): 
@@ -1700,6 +1782,7 @@ class App(Tk, Updatable):
     @property
     def height(self):
         return self.__size.y
+
 
 def main():
     App()
