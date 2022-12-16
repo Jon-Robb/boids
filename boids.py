@@ -1837,5 +1837,14 @@ def main():
     App()
 
 
+def __main_doctest():
+    if bool(__debug__): # do not work
+        import doctest
+        doctest.testmod()#verbose=True)
+def __main_doctest():
+    import doctest
+    doctest.testmod()#verbose=True)
+
 if __name__ == '__main__':
+    __main_doctest()
     main()
