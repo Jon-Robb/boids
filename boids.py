@@ -852,21 +852,46 @@ class DynamicCircle(Circle, Movable, Piloted):
         """
             
     def draw(self, draw:ImageDraw):
+        """Methode generique de dessin d'un cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objet necessaire pour dessiner sur une image
+        """
         Circle.draw(self, draw)
 
     def draw_circle_speed(self, draw:ImageDraw):
+        """Methode de dessin de la vitesse du cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objet necessaire pour dessiner sur une image
+        """
         draw.line([self.position.x, self.position.y, self.position.x + self.speed.x, self.position.y + self.speed.y], fill="red", width=5)
         
     def draw_circle_steering_force(self, draw:ImageDraw):
+        """Methode de dessin de la force de déplacement du cercle dynamique
+
+        Args:
+            draw (ImageDraw): Objwet necessaire pour dessiner sur une image
+        """
         draw.line([self.position.x, self.position.y, self.position.x + self.steering_force.x * 10, self.position.y + self.steering_force.y * 10], fill="darkgoldenrod", width=5)
         for steering_behavior in self.steering_behaviors:
             if hasattr(steering_behavior, "draw"):
                     steering_behavior.draw(draw)
             
     def move(self, time):
+        """Method qui permet de déplacer le cercle dynamique
+
+        Args:
+            time (float): Unité de temps
+        """
         Movable.move(self, time)
 
     def tick(self, time):
+        """Methode qui permet de faire évoluer le cercle dynamique
+
+        Args:
+            time (float): Unité de temps
+        """
         self.steer()
         self.move(time)
 
@@ -874,6 +899,9 @@ class DynamicCircle(Circle, Movable, Piloted):
 class SentientCircle(DynamicCircle):
     def __init__(self, border_color=RGBAColor(randomize=True), border_width=5, fill_color=RGBAColor(randomize=True), position=Vect2D(random.randrange(0,1000),random.randrange(0,500)), radius=random.randint(10, 50), acceleration=Vect2D(0,0), speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)), max_speed= 100, max_steering_force=5, steering_force=Vect2D(0,0), steering_behaviors=None, environment=None, brain=None, eyes=None):
         DynamicCircle.__init__(self, border_color, border_width, fill_color, position, radius, acceleration, speed, max_speed, max_steering_force, steering_force, steering_behaviors)
+
+        """Création d'un cercle intelligent, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement et qui peut voir et interagir avec son environnement
+        """
 
         self.__brain = brain if brain else Brain(self, environment)  
         self.__eyes = eyes if eyes else [Eye(self)]
