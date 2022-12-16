@@ -647,7 +647,7 @@ class Brain():
     - `Brain.__active_behaviors` : la liste des comportements actifs
     - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
     """
-    def __init__(self, owner:type["Entity"], environment:type["Simulation"], behavior_patterns:dict(dict(str))=None):
+    def __init__(self, owner:type["Entity"], environment:type["Simulation"], behavior_patterns:dict[dict[str]]=None):
         """
         Création d'un objet `Brain` utilisant les patterns de comportement passés en paramètre.
         Si aucun pattern n'est passé en paramètre, les patterns par défaut sont utilisés.
@@ -699,6 +699,7 @@ class Brain():
 
     def process(self):
         """
+
         """
         self.__seen_entities = []
         self.__active_behaviors = []
