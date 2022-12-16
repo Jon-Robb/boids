@@ -544,16 +544,9 @@ class Piloted():
     Args:
     self.__max_steering_force (int): la force maximal de direction .
     self.steering_force (Vect2D): la force de direction.
-    self.__steering_behaviors (list[SteeringBehavior]): la liste des Steering Behaviors.
+    self.__steering_behaviors (list[SteeringBehavior]): la liste des Steering Behaviors.     
     
-    '''
-    def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
-        self.__max_steering_force = max_steering_force
-        self.steering_force = steering_force
-        self.__steering_behaviors = steering_behaviors
-    '''   The steer function helps to set the steering force for each boids.
-
-        Example:
+    Example:
         >>> dynamiccircle = DynamicCircle( border_color=RGBAColor(randomize=True),
                                                             border_width=5,
                                                             fill_color=RGBAColor(randomize=True),
@@ -566,10 +559,20 @@ class Piloted():
                                                             steering_force=Vect2D(0,0),
                                                             steering_behaviors=[BorderRepulsion(sim_dim=self.__size)])
         >>> dynamiccircle.steer()
-        >>> print(dynamiciircle is not None)
-        True'''
+        >>> print(dynamicircle is not None)
+        True
+    
+    '''
+    def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
+        self.__max_steering_force = max_steering_force
+        self.steering_force = steering_force
+        self.__steering_behaviors = steering_behaviors
+
+   
     def steer(self) -> None:
-  
+        '''   The steer function helps to set the steering force for each boids.
+        '''
+
         
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
