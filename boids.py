@@ -1046,11 +1046,12 @@ class Simulation(Updatable):
                     self.__sprites.append(Circle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height)))))
             
             case 'Avoid Obstacles':
-                nb_obstacles = 10
-                nb_sentient_circles = 1
+                nb_obstacles = 20
+                nb_sentient_circles = 10
                         
                 for _ in range(nb_obstacles):
-                    self.__sprites.append(Circle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height)))))
+                    self.__sprites.append(Circle(   position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
+                                                    radius=25))
 
                 for _ in range(nb_sentient_circles):
                     self.__sprites.append(SentientCircle(border_color=RGBAColor(randomize=True),
