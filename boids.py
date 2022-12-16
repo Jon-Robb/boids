@@ -522,12 +522,37 @@ class Movable():
 
 
 class Piloted():
+    '''
+    Piloted represent the ability of a dynamic circle to be influenced by a steering behavior. it contains the steer function that can be override.
+    
+    '''
     def __init__(self, max_steering_force:int, steering_force:Vect2D, steering_behaviors:list[SteeringBehavior]):
         self.__max_steering_force = max_steering_force
         self.steering_force = steering_force
         self.__steering_behaviors = steering_behaviors
 
     def steer(self):
+        ''' 
+        The steer function helps to set the steering force for each boids.
+
+        Example:
+        >>> dynamiccircle = DynamicCircle( border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(randomize=True),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(10, 50),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            steering_force=Vect2D(0,0),
+                                                            steering_behaviors=[BorderRepulsion(sim_dim=self.__size)])
+        >>> dynamiccircle.steer()
+        >>> print(dynamiccircle)
+
+
+
+        '''
         if self.__steering_behaviors is not None:
             for steering_behavior in self.__steering_behaviors:
                 self.steering_force.set(self.steering_force.x + steering_behavior.behave(origin_entity=self).x, self.steering_force.y + steering_behavior.behave(origin_entity=self).y)
@@ -535,18 +560,23 @@ class Piloted():
 
     @property
     def max_steering_force(self):
+        '''Retourne la force de direction maximale '''
         return self.__max_steering_force
 
     @property
     def steering_force(self):
+        '''Retourne la force de direction actuelle '''
         return self.__steering_force
     
     @property
+     
     def steering_behaviors(self):
+        '''Retourne la liste des comportements de direction'''
         return self.__steering_behaviors
 
     @steering_force.setter
     def steering_force(self, steering_force):
+        '''permet de donner une force de direction'''
         self.__steering_force = steering_force
 
 
