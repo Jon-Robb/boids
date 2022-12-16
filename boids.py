@@ -634,7 +634,7 @@ class Brain():
     - `Brain.__active_behaviors` : la liste des comportements actifs
     - `Brain.__permanent_patterns` : la liste des patterns de comportement permanents
     """
-    def __init__(self, owner, environment, behavior_patterns=None):
+    def __init__(self, owner:type["Entity"], environment:type["Simulation"], behavior_patterns:dict(dict(str))=None):
         """
         Création d'un objet `Brain` utilisant les patterns de comportement passés en paramètre.
         Si aucun pattern n'est passé en paramètre, les patterns par défaut sont utilisés.
@@ -1288,14 +1288,15 @@ class Simulation(Updatable):
 
 
             case 'Predator Chasing Prey': # Default
-                nb_obstacles = 5
-                nb_predators = 2
-                nb_preys = 10
+                nb_obstacles = 0
+                nb_predators = 1
+                nb_preys = 50
                 for _ in range(nb_predators):
                     self.__sprites.append(PredatorCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
                                                         speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
                                                         border_color=RGBAColor(randomize=True),
                                                         border_width=5,
+                                                        radius=25,
                                                         acceleration=Vect2D(0,0),
                                                         max_speed= 100,
                                                         max_steering_force=5,
@@ -1304,16 +1305,17 @@ class Simulation(Updatable):
                                                         fill_color=RGBAColor(255,0,0,255)
                                                        ))
                 for _ in range(nb_preys):
-                    self.__sprites.append(PreyCircle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height))),
-                                                        speed=Vect2D(random.randrange(-50,50),random.randrange(-50,50)),
-                                                        border_color=RGBAColor(randomize=True),
-                                                        border_width=5,
-                                                        acceleration=Vect2D(0,0),
-                                                        max_speed= 100,
-                                                        max_steering_force=5,
-                                                        steering_force=Vect2D(0,0),
-                                                        environment=self,
-                                                        fill_color=RGBAColor(0,255,0,255)
+                    self.__sprites.append(PreyCircle(border_color=RGBAColor(randomize=True),
+                                                            border_width=5,
+                                                            fill_color=RGBAColor(0,255,0,255),
+                                                            position=Vect2D(random.randrange(0,1000),random.randrange(0,500)),
+                                                            radius=random.randint(5, 10),
+                                                            acceleration=Vect2D(0,0),
+                                                            speed=Vect2D(random.randrange(-50,50), random.randrange(-50,50)),
+                                                            max_speed= 100,
+                                                            max_steering_force=5,
+                                                            steering_force=Vect2D(0,0),
+                                                            environment=self
                                                        ))
                 for _ in range(nb_obstacles):
                     self.__sprites.append(Circle(position=Vect2D(random.randrange(0, int(self.width)),random.randrange(0, int(self.height)))))
