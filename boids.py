@@ -1262,7 +1262,7 @@ class Simulation(Updatable):
 
 
             case 'Follow Biggest Boid Seen':
-                nb_balls = 5
+                nb_balls = 50
 
                 behavior_patterns =  {  "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
                                         "SentientCircle": { "Behavior": FollowBiggestBoidSeen, "Target_type" : "grouping" },
