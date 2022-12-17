@@ -618,9 +618,11 @@ class Updatable():
 #  \______| \______/  |__|  |__| | _|       \______/  |__| \__| |_______||__| \__|     |__|    |_______/    
 class Brain():
     """
-    Cette classe représente  un cerveau appartenant à un objet propriétaire. 
-    Il est responsable de la collecte d'informations en provenance des capteurs du propriétaire, et de la prise de décision de l'entité.
-    Il est composé de patterns de comportement, qui sont des couples (cible, comportement) qui sont appliqués à l'entité en fonction de la cible que le cerveau détecte.
+    Commentée par Andrzej Wisniowski
+
+    Cette classe représente un cerveau appartenant à un objet propriétaire. 
+    Elle est responsable de la collecte d'informations en provenance des capteurs du propriétaire, et de la prise de décision de l'entité.
+    Elle est composés de patterns de comportement, qui sont principalement des couples (cible, comportement) qui sont appliqués à l'entité en fonction de la cible que le cerveau détecte. Il existe également des patterns de comportement qui ne sont pas liés à une cible, et qui sont toujours ou conditionnellement appliqués à l'entité.
     
     Il existe plusieurs façons de **créer** un `Brain` :
     
@@ -665,11 +667,11 @@ class Brain():
         """
         self.__owner = owner
         """
-        L'entité propriétaire
+        L'entité propriétaire. Il s'agit dans ce cas-ci d'un **SentientCircle**.
         """
         self.__environment = environment
         """
-        L'environnement dans lequel évolue l'entité
+        L'environnement dans lequel évolue l'entité. Il s'agit dans ce cas-ci de la **Simulation**.
         """
         if behavior_patterns is None:
             self.__behavior_patterns = {    "DynamicCircle": { "Behavior": Evade, "Target_type" : "single" }, 
