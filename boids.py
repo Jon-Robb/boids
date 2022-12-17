@@ -948,7 +948,9 @@ class Circle(Entity):
 
 class DynamicCircle(Circle, Movable, Piloted):
     
-    """Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
+    """
+    Classe commentée par Jonathan Robinson-R. 
+    Création d'un cercle dynamique, c'est à dire un cercle qui peut se déplacer et qui peut être piloté par des forces de déplacement
         
         Args:
             - border_color (RGBAColor, optional): Couleur de la bordure. Defaults to RGBAColor(randomize=True).
