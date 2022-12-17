@@ -1588,7 +1588,7 @@ class InfoPanel(ttk.LabelFrame):
         return self.__info_string
 
     def update(self):
-        if self.__info_entity is not None and not isinstance(self.__info_entity, Circle):
+        if self.__info_entity is not None and not type(self.__info_entity) is Circle:
             self.__info_string = "Name: " + self.__info_entity.name + "\n"
             self.__info_string += "Position: ({}, {})".format(math.trunc(self.__info_entity.position.x), math.trunc(self.__info_entity.position.y)) + "\n"
             self.__info_string += "Speed: ({}, {})".format(math.trunc(self.__info_entity.speed.x), math.trunc(self.__info_entity.speed.y)) + "\n"
