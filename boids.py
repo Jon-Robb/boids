@@ -1125,7 +1125,10 @@ class PreyCircle(SentientCircle):
 
 
 class Simulation(Updatable):
-    """ La classe Simulation correspond à la simulation elle-même. 
+    """ 
+        Commentée par Alexis Provost
+        
+        La classe Simulation correspond à la simulation elle-même. 
         Elle contient les sprites, la taille de l'image, la position de la souris, et la boucle de jeu qui bouge les Entities.
         Elle contient aussi les fonctions de dessin, qui sont appelées par la fonction draw() de la classe Window.
        
