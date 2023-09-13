@@ -57,6 +57,7 @@
 
 [![VSCode][vscode-img]][vscode-url]
 [![Python][python-img]][python-url]
+[![Pillow][pillow-img]][pillow-url]
 
 
 <!-- USAGE EXAMPLES -->
