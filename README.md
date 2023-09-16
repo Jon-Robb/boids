@@ -1,7 +1,7 @@
 
 <a name="readme-top"></a>
 
-### This project was init from [this project](https://github.com/cryptoblivious/Boids) as part of this amazing team [JAAT](https://github.com/cryptoblivious/Boids/graphs/contributors)
+### This project was init from [this project](https://github.com/cryptoblivious/Boids)(private) as part of the amazing JAAT team : [Cryptoblivious](https://github.com/cryptoblivious), [Alexis Provost](https://github.com/alexisprovost?tab=overview&from=2023-09-01&to=2023-09-16) and [Thomas Pelletier](https://github.com/Thomkiller)
 
 <div align="center">
 
